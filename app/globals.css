@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Custom styles */
+html {
+  font-family: system-ui, sans-serif;
+}

@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model saas_installations {
+  id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  domain               String                      @unique @db.VarChar(255)
+  company_name         String                      @db.VarChar(255)
+  admin_email          String                      @db.VarChar(255)
+  database_url         String?
+  status               String                      @default("active") @db.VarChar(50)
+  created_at           DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                    @default(now()) @db.Timestamptz(6)
+  last_accessed_at     DateTime?                   @db.Timestamptz(6)
+  billing_email        String?                     @db.VarChar(255)
+  billing_plan         String?                     @db.VarChar(100)
+  notes                String?
+  recovery_access_logs saas_recovery_access_logs[]
+  recovery_tokens      saas_recovery_tokens[]
+
+  @@index([domain], map: "idx_saas_installations_domain")
+  @@index([status], map: "idx_saas_installations_status")
+}
+
+model saas_recovery_tokens {
+  id              String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id String                      @db.Uuid
+  token           String                      @unique @db.VarChar(255)
+  purpose         String                      @db.VarChar(255)
+  expires_at      DateTime                    @db.Timestamptz(6)
+  created_by      String                      @db.VarChar(255)
+  created_at      DateTime                    @default(now()) @db.Timestamptz(6)
+  used_at         DateTime?                   @db.Timestamptz(6)
+  used_by_ip      String?                     @db.Inet
+  used_by_agent   String?
+  is_active       Boolean                     @default(true)
+  max_uses        Int                         @default(1)
+  use_count       Int                         @default(0)
+  permissions     Json                        @default("[]") @db.Json
+  access_logs     saas_recovery_access_logs[]
+  installation    saas_installations          @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_saas_recovery_tokens_installation")
+
+  @@index([token], map: "idx_saas_recovery_tokens_token")
+  @@index([installation_id], map: "idx_saas_recovery_tokens_installation")
+  @@index([expires_at], map: "idx_saas_recovery_tokens_expires")
+}
+
+model saas_recovery_access_logs {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id String                @db.Uuid
+  token_id        String?               @db.Uuid
+  action          String                @db.VarChar(255)
+  user_email      String?               @db.VarChar(255)
+  ip_address      String?               @db.Inet
+  user_agent      String?
+  success         Boolean               @default(true)
+  details         Json?                 @db.Json
+  created_at      DateTime              @default(now()) @db.Timestamptz(6)
+  performed_by    String?               @db.VarChar(255)
+  installation    saas_installations    @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_saas_recovery_logs_installation")
+  token           saas_recovery_tokens? @relation(fields: [token_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_saas_recovery_logs_token")
+
+  @@index([installation_id], map: "idx_saas_recovery_logs_installation")
+  @@index([created_at], map: "idx_saas_recovery_logs_created_at")
+  @@index([action], map: "idx_saas_recovery_logs_action")
+}
+
+model saas_admin_users {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  name          String    @db.VarChar(255)
+  password_hash String
+  role          String    @default("admin") @db.VarChar(50)
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  last_login_at DateTime? @db.Timestamptz(6)
+
+  @@index([email], map: "idx_saas_admin_users_email")
+}
