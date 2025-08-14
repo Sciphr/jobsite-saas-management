@@ -153,10 +153,12 @@ export async function createDatabaseBackup(installationId) {
  */
 export async function runAllBackups() {
   try {
+    // Import here to avoid circular dependencies
+    const { createNodeJsBackup } = await import('./nodejs-backup-manager.js');
+    
     const installations = await managementPrisma.saas_installations.findMany({
       where: { 
         status: 'active',
-        backup_enabled: true,
         database_url: { not: null }
       },
       select: { id: true, domain: true }
@@ -166,7 +168,7 @@ export async function runAllBackups() {
     
     for (const installation of installations) {
       console.log(`Running backup for ${installation.domain}...`);
-      const result = await createDatabaseBackup(installation.id);
+      const result = await createNodeJsBackup(installation.id);
       results.push({
         installation_id: installation.id,
         domain: installation.domain,

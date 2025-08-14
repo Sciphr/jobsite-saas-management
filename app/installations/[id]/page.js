@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useBackupHistory } from "../../hooks/useInstallations";
 
 export default function InstallationDetail({ params }) {
   const [installation, setInstallation] = useState(null);
@@ -12,7 +13,16 @@ export default function InstallationDetail({ params }) {
   const [selectedToken, setSelectedToken] = useState(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [showSupportSection, setShowSupportSection] = useState(false);
+  const [showBackupHistory, setShowBackupHistory] = useState(false);
+  const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
+  const [isRunningBackup, setIsRunningBackup] = useState(false);
   const router = useRouter();
+
+  // React Query for backup history
+  const { 
+    data: backupHistory = [], 
+    isLoading: isLoadingBackupHistory 
+  } = useBackupHistory(installationId, showBackupHistory);
 
   useEffect(() => {
     const getParams = async () => {
@@ -93,6 +103,7 @@ export default function InstallationDetail({ params }) {
   };
 
   const runSingleHealthCheck = async () => {
+    setIsRunningHealthCheck(true);
     try {
       const response = await fetch('/api/health', {
         method: 'POST',
@@ -112,6 +123,8 @@ export default function InstallationDetail({ params }) {
     } catch (error) {
       console.error('Error running health check:', error);
       alert('Error running health check');
+    } finally {
+      setIsRunningHealthCheck(false);
     }
   };
 
@@ -122,6 +135,7 @@ export default function InstallationDetail({ params }) {
     }
     
     if (confirm(`Create a database backup for ${installation.company_name}?`)) {
+      setIsRunningBackup(true);
       try {
         const response = await fetch('/api/backups', {
           method: 'POST',
@@ -142,9 +156,17 @@ export default function InstallationDetail({ params }) {
       } catch (error) {
         console.error('Error running backup:', error);
         alert('Error running backup');
+      } finally {
+        setIsRunningBackup(false);
       }
     }
   };
+
+
+  const downloadBackup = (filePath) => {
+    window.open(`/api/backups/download?path=${encodeURIComponent(filePath)}`, '_blank');
+  };
+
 
   if (loading) {
     return (
@@ -321,14 +343,21 @@ export default function InstallationDetail({ params }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button 
                 onClick={() => runSingleHealthCheck()}
-                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors"
+                disabled={isRunningHealthCheck}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center">
-                  <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  {isRunningHealthCheck ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-3"></div>
+                  ) : (
+                    <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
                   <div>
-                    <h3 className="text-sm font-medium text-green-900">Run Health Check</h3>
+                    <h3 className="text-sm font-medium text-green-900">
+                      {isRunningHealthCheck ? 'Running Health Check...' : 'Run Health Check'}
+                    </h3>
                     <p className="text-sm text-green-700">Check this installation</p>
                   </div>
                 </div>
@@ -336,22 +365,29 @@ export default function InstallationDetail({ params }) {
 
               <button 
                 onClick={() => runSingleBackup()}
-                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+                disabled={isRunningBackup}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center">
-                  <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                  </svg>
+                  {isRunningBackup ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                  ) : (
+                    <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                  )}
                   <div>
-                    <h3 className="text-sm font-medium text-blue-900">Create Backup</h3>
+                    <h3 className="text-sm font-medium text-blue-900">
+                      {isRunningBackup ? 'Creating Backup...' : 'Create Backup'}
+                    </h3>
                     <p className="text-sm text-blue-700">Backup database now</p>
                   </div>
                 </div>
               </button>
 
-              <button 
-                onClick={() => setShowSupportSection(!showSupportSection)}
-                className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-left hover:bg-purple-100 transition-colors"
+              <Link 
+                href={`/support?installation=${installationId}`}
+                className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-left hover:bg-purple-100 transition-colors block"
               >
                 <div className="flex items-center">
                   <svg className="h-6 w-6 text-purple-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -360,6 +396,21 @@ export default function InstallationDetail({ params }) {
                   <div>
                     <h3 className="text-sm font-medium text-purple-900">Support Tickets</h3>
                     <p className="text-sm text-purple-700">View customer issues</p>
+                  </div>
+                </div>
+              </Link>
+
+              <button 
+                onClick={() => setShowBackupHistory(!showBackupHistory)}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900">Backup History</h3>
+                    <p className="text-sm text-blue-700">View and download backups</p>
                   </div>
                 </div>
               </button>
@@ -438,6 +489,100 @@ export default function InstallationDetail({ params }) {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Backup History */}
+        {showBackupHistory && (
+          <div className="bg-white shadow rounded-lg mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Backup History</h2>
+            </div>
+            {isLoadingBackupHistory ? (
+              <div className="p-12 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading backup history...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Size
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {backupHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                          No backups found for this installation
+                        </td>
+                      </tr>
+                    ) : (
+                      backupHistory.map((backup) => (
+                        <tr key={backup.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {new Date(backup.started_at).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              backup.status === 'completed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : backup.status === 'running'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {backup.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {backup.file_size ? `${(parseInt(backup.file_size) / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {backup.backup_type}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm font-medium">
+                            <div className="flex items-center justify-end space-x-2">
+                              {backup.status === 'completed' && backup.file_path && (
+                                <button
+                                  onClick={() => downloadBackup(backup.file_path)}
+                                  className="text-indigo-600 hover:text-indigo-500 whitespace-nowrap"
+                                >
+                                  Download
+                                </button>
+                              )}
+                              {backup.error_message && (
+                                <button
+                                  onClick={() => alert(backup.error_message)}
+                                  className="text-red-600 hover:text-red-500 text-xs whitespace-nowrap"
+                                  title={backup.error_message}
+                                >
+                                  View Error
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

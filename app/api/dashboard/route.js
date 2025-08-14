@@ -2,6 +2,7 @@ import { getInstallations, getDashboardStats } from '../../lib/saas-recovery';
 import { getHealthOverview } from '../../lib/health-monitor';
 import { getBackupOverview } from '../../lib/backup-manager';
 import { getSupportStats } from '../../lib/support-tickets';
+import { createSafeResponse } from '../../lib/serialization';
 
 export async function GET(request) {
   try {
@@ -27,7 +28,7 @@ export async function GET(request) {
     const backupStats = backupResult.success ? backupResult.stats : {};
     const supportStats = supportResult.success ? supportResult.stats : {};
 
-    return Response.json({
+    return createSafeResponse({
       installations: installationsResult.installations,
       stats: {
         ...statsResult.stats,
@@ -39,6 +40,6 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
-    return Response.json({ error: 'Failed to fetch dashboard data' }, { status: 500 });
+    return createSafeResponse({ error: 'Failed to fetch dashboard data' }, { status: 500 });
   }
 }

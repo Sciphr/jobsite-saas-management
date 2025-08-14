@@ -202,9 +202,14 @@ export default function CreateInstallation() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create Installation'}
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </div>
+                ) : 'Create Installation'}
               </button>
             </div>
           </form>

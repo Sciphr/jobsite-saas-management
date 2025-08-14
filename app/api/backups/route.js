@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import path from 'path';
+import { PrismaClient } from '@prisma/client';
 import { 
   createDatabaseBackup, 
   runAllBackups, 
@@ -6,6 +8,19 @@ import {
   getBackupOverview,
   cleanupOldBackups 
 } from '../../lib/backup-manager.js';
+import { 
+  createDatabaseBackupWithSupabase,
+  downloadBackupFromSupabase,
+  listSupabaseBackups,
+  cleanupSupabaseBackups
+} from '../../lib/supabase-backup-manager.js';
+import { 
+  createNodeJsBackup
+} from '../../lib/nodejs-backup-manager.js';
+
+const managementPrisma = new PrismaClient({
+  datasourceUrl: process.env.MANAGEMENT_DATABASE_URL || process.env.DATABASE_URL
+});
 
 export async function GET(request) {
   try {
@@ -26,7 +41,12 @@ export async function GET(request) {
       const limit = parseInt(searchParams.get('limit')) || 50;
       const result = await getBackupHistory(installationId, limit);
       if (result.success) {
-        return NextResponse.json(result.backupLogs);
+        // Convert BigInt to string for JSON serialization
+        const serializedLogs = result.backupLogs.map(log => ({
+          ...log,
+          file_size: log.file_size ? log.file_size.toString() : null
+        }));
+        return NextResponse.json(serializedLogs);
       } else {
         return NextResponse.json({ error: result.error }, { status: 500 });
       }
@@ -45,12 +65,50 @@ export async function POST(request) {
     const { installation_id, action } = body;
 
     if (action === 'create-backup' && installation_id) {
-      const result = await createDatabaseBackup(installation_id);
+      // Use Node.js backup (works everywhere - no pg_dump needed)
+      const result = await createNodeJsBackup(installation_id);
       if (result.success) {
         return NextResponse.json({ 
-          message: 'Backup completed successfully', 
+          message: 'Backup completed and uploaded to Supabase successfully', 
           backup: result.backup 
         });
+      } else {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+    }
+
+    if (action === 'download-backup') {
+      const supabasePath = body.supabase_path;
+      if (!supabasePath) {
+        return NextResponse.json({ error: 'supabase_path is required' }, { status: 400 });
+      }
+      
+      const result = await downloadBackupFromSupabase(supabasePath);
+      if (result.success) {
+        return new NextResponse(result.data, {
+          headers: {
+            'Content-Type': 'application/sql',
+            'Content-Disposition': `attachment; filename="${path.basename(supabasePath)}"`
+          }
+        });
+      } else {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+    }
+
+    if (action === 'list-backups' && installation_id) {
+      const installation = await managementPrisma.saas_installations.findUnique({
+        where: { id: installation_id },
+        select: { domain: true }
+      });
+      
+      if (!installation) {
+        return NextResponse.json({ error: 'Installation not found' }, { status: 404 });
+      }
+      
+      const result = await listSupabaseBackups(installation.domain);
+      if (result.success) {
+        return NextResponse.json(result.backups);
       } else {
         return NextResponse.json({ error: result.error }, { status: 500 });
       }
@@ -71,12 +129,12 @@ export async function POST(request) {
 
     if (action === 'cleanup') {
       const daysToKeep = body.days_to_keep || 30;
-      const result = await cleanupOldBackups(daysToKeep);
+      const result = await cleanupSupabaseBackups(daysToKeep);
       if (result.success) {
         return NextResponse.json({ 
           message: 'Cleanup completed', 
           deletedCount: result.deletedCount,
-          freedSpace: result.freedSpace
+          errors: result.errors
         });
       } else {
         return NextResponse.json({ error: result.error }, { status: 500 });

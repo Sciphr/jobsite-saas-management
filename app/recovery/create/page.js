@@ -9,6 +9,7 @@ export default function CreateRecoveryToken() {
   const preselectedInstallation = searchParams.get('installation');
   
   const [installations, setInstallations] = useState([]);
+  const [installationsLoading, setInstallationsLoading] = useState(true);
   const [formData, setFormData] = useState({
     installationId: preselectedInstallation || '',
     purpose: '',
@@ -33,6 +34,8 @@ export default function CreateRecoveryToken() {
       }
     } catch (error) {
       console.error('Error fetching installations:', error);
+    } finally {
+      setInstallationsLoading(false);
     }
   };
 
@@ -252,9 +255,10 @@ export default function CreateRecoveryToken() {
                 required
                 value={formData.installationId}
                 onChange={(e) => setFormData(prev => ({ ...prev, installationId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={installationsLoading}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
               >
-                <option value="">Select an installation...</option>
+                <option value="">{installationsLoading ? 'Loading installations...' : 'Select an installation...'}</option>
                 {installations.map(installation => (
                   <option key={installation.id} value={installation.id}>
                     {installation.company_name} ({installation.domain})
@@ -351,9 +355,14 @@ export default function CreateRecoveryToken() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Creating...' : 'Create Recovery Token'}
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </div>
+                ) : 'Create Recovery Token'}
               </button>
             </div>
           </form>

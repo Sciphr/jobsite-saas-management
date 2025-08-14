@@ -1,38 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useInstallations } from "./hooks/useInstallations";
 
 export default function SaaSManagementDashboard() {
-  const [installations, setInstallations] = useState([]);
-  const [stats, setStats] = useState({
+  const [isRunningHealthChecks, setIsRunningHealthChecks] = useState(false);
+  const [isRunningBackups, setIsRunningBackups] = useState(false);
+  const [isCleaningUpBackups, setIsCleaningUpBackups] = useState(false);
+
+  // React Query for dashboard data
+  const { 
+    data: dashboardData, 
+    isLoading: loading, 
+    error,
+    refetch: fetchDashboardData 
+  } = useInstallations();
+  
+  const installations = dashboardData?.installations || [];
+  const stats = dashboardData?.stats || {
     totalInstallations: 0,
     activeInstallations: 0,
     activeRecoveryTokens: 0,
     recentRecoveryAccess: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const response = await fetch('/api/dashboard');
-      if (response.ok) {
-        const data = await response.json();
-        setInstallations(data.installations || []);
-        setStats(data.stats || {});
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const runHealthChecks = async () => {
+    setIsRunningHealthChecks(true);
     try {
       const response = await fetch('/api/health', {
         method: 'POST',
@@ -49,11 +43,14 @@ export default function SaaSManagementDashboard() {
     } catch (error) {
       console.error('Error running health checks:', error);
       alert('Error running health checks');
+    } finally {
+      setIsRunningHealthChecks(false);
     }
   };
 
   const runBackups = async () => {
     if (confirm('This will start database backups for all installations. Continue?')) {
+      setIsRunningBackups(true);
       try {
         const response = await fetch('/api/backups', {
           method: 'POST',
@@ -69,6 +66,38 @@ export default function SaaSManagementDashboard() {
       } catch (error) {
         console.error('Error running backups:', error);
         alert('Error running backups');
+      } finally {
+        setIsRunningBackups(false);
+      }
+    }
+  };
+
+  const cleanupOldBackups = async () => {
+    if (confirm('This will delete all backup files older than 30 days. This cannot be undone. Continue?')) {
+      setIsCleaningUpBackups(true);
+      try {
+        const response = await fetch('/api/backups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'cleanup',
+            days_to_keep: 30 
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          alert(`Cleanup completed! Deleted ${data.deletedCount} old backup files.`);
+          fetchDashboardData(); // Refresh dashboard stats
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to cleanup backups: ${errorData.error}`);
+        }
+      } catch (error) {
+        console.error('Error cleaning up backups:', error);
+        alert('Error cleaning up backups');
+      } finally {
+        setIsCleaningUpBackups(false);
       }
     }
   };
@@ -76,7 +105,26 @@ export default function SaaSManagementDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">Failed to load dashboard</div>
+          <button 
+            onClick={() => fetchDashboardData()}
+            className="text-indigo-600 hover:text-indigo-500"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -268,17 +316,24 @@ export default function SaaSManagementDashboard() {
             <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <button 
                 onClick={() => runHealthChecks()}
-                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors"
+                disabled={isRunningHealthChecks}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center">
-                  <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  {isRunningHealthChecks ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-3"></div>
+                  ) : (
+                    <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
                   <div>
-                    <h3 className="text-sm font-medium text-green-900">Run Health Checks</h3>
+                    <h3 className="text-sm font-medium text-green-900">
+                      {isRunningHealthChecks ? 'Running Health Checks...' : 'Run Health Checks'}
+                    </h3>
                     <p className="text-sm text-green-700">Check all installations</p>
                   </div>
                 </div>
@@ -286,14 +341,21 @@ export default function SaaSManagementDashboard() {
 
               <button 
                 onClick={() => runBackups()}
-                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+                disabled={isRunningBackups}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center">
-                  <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                  </svg>
+                  {isRunningBackups ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                  ) : (
+                    <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                  )}
                   <div>
-                    <h3 className="text-sm font-medium text-blue-900">Run Backups</h3>
+                    <h3 className="text-sm font-medium text-blue-900">
+                      {isRunningBackups ? 'Running Backups...' : 'Run Backups'}
+                    </h3>
                     <p className="text-sm text-blue-700">Backup all databases</p>
                   </div>
                 </div>
@@ -313,6 +375,28 @@ export default function SaaSManagementDashboard() {
                   </div>
                 </div>
               </Link>
+
+              <button 
+                onClick={() => cleanupOldBackups()}
+                disabled={isCleaningUpBackups}
+                className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-left hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center">
+                  {isCleaningUpBackups ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mr-3"></div>
+                  ) : (
+                    <svg className="h-6 w-6 text-orange-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  )}
+                  <div>
+                    <h3 className="text-sm font-medium text-orange-900">
+                      {isCleaningUpBackups ? 'Cleaning Up...' : 'Cleanup Backups'}
+                    </h3>
+                    <p className="text-sm text-orange-700">Delete backups older than 30 days</p>
+                  </div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
