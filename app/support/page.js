@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function SupportTickets() {
+function SupportTicketsContent() {
   const searchParams = useSearchParams();
   const installationFilter = searchParams.get('installation');
   
@@ -283,5 +283,20 @@ export default function SupportTickets() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SupportTickets() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading support tickets...</p>
+        </div>
+      </div>
+    }>
+      <SupportTicketsContent />
+    </Suspense>
   );
 }
