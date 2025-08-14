@@ -11,6 +11,7 @@ export default function InstallationDetail({ params }) {
   const [installationId, setInstallationId] = useState(null);
   const [selectedToken, setSelectedToken] = useState(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showSupportSection, setShowSupportSection] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -88,6 +89,60 @@ export default function InstallationDetail({ params }) {
       console.error('Failed to copy to clipboard:', error);
       // Fallback: show the URL in a prompt
       prompt('Copy this recovery URL:', recoveryUrl);
+    }
+  };
+
+  const runSingleHealthCheck = async () => {
+    try {
+      const response = await fetch('/api/health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'run-check',
+          installation_id: installationId 
+        })
+      });
+      
+      if (response.ok) {
+        alert('Health check completed. Refreshing data...');
+        fetchInstallation(); // Refresh to see updated health status
+      } else {
+        alert('Failed to run health check');
+      }
+    } catch (error) {
+      console.error('Error running health check:', error);
+      alert('Error running health check');
+    }
+  };
+
+  const runSingleBackup = async () => {
+    if (!installation?.database_url) {
+      alert('No database URL configured for this installation. Add one in the edit page first.');
+      return;
+    }
+    
+    if (confirm(`Create a database backup for ${installation.company_name}?`)) {
+      try {
+        const response = await fetch('/api/backups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'create-backup',
+            installation_id: installationId 
+          })
+        });
+        
+        if (response.ok) {
+          alert('Backup started successfully.');
+          fetchInstallation(); // Refresh to see updated backup status
+        } else {
+          const data = await response.json();
+          alert(`Failed to start backup: ${data.error}`);
+        }
+      } catch (error) {
+        console.error('Error running backup:', error);
+        alert('Error running backup');
+      }
     }
   };
 
@@ -205,6 +260,48 @@ export default function InstallationDetail({ params }) {
                   <dd className="text-sm text-gray-900">{installation.billing_plan}</dd>
                 </div>
               )}
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Health Status</dt>
+                <dd className="flex items-center">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    installation?.health_status === 'healthy' 
+                      ? 'bg-green-100 text-green-800' 
+                      : installation?.health_status === 'degraded'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : installation?.health_status === 'unhealthy' || installation?.health_status === 'error'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {installation?.health_status || 'unknown'}
+                  </span>
+                  {installation?.last_health_check && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      (checked {new Date(installation.last_health_check).toLocaleString()})
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Backup Status</dt>
+                <dd className="flex items-center">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    installation?.backup_status === 'completed' 
+                      ? 'bg-green-100 text-green-800' 
+                      : installation?.backup_status === 'running'
+                      ? 'bg-blue-100 text-blue-800'
+                      : installation?.backup_status === 'failed'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {installation?.backup_status || 'pending'}
+                  </span>
+                  {installation?.last_backup_at && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      (last backup {new Date(installation.last_backup_at).toLocaleString()})
+                    </span>
+                  )}
+                </dd>
+              </div>
               {installation?.notes && (
                 <div className="md:col-span-2">
                   <dt className="text-sm font-medium text-gray-500">Notes</dt>
@@ -214,6 +311,135 @@ export default function InstallationDetail({ params }) {
             </dl>
           </div>
         </div>
+
+        {/* Management Actions */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Management Actions</h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button 
+                onClick={() => runSingleHealthCheck()}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-green-900">Run Health Check</h3>
+                    <p className="text-sm text-green-700">Check this installation</p>
+                  </div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => runSingleBackup()}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900">Create Backup</h3>
+                    <p className="text-sm text-blue-700">Backup database now</p>
+                  </div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => setShowSupportSection(!showSupportSection)}
+                className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-left hover:bg-purple-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-purple-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-purple-900">Support Tickets</h3>
+                    <p className="text-sm text-purple-700">View customer issues</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Health Check Details */}
+        {installation?.health_details && (
+          <div className="bg-white shadow rounded-lg mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Health Check Details</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {installation.health_details.checks?.http && (
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-2">HTTP Check</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-500">Status:</span>
+                        <span className={`text-sm font-medium ${
+                          installation.health_details.checks.http.status === 'healthy' 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {installation.health_details.checks.http.status}
+                        </span>
+                      </div>
+                      {installation.health_details.checks.http.response_time && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500">Response Time:</span>
+                          <span className="text-sm text-gray-900">{installation.health_details.checks.http.response_time}ms</span>
+                        </div>
+                      )}
+                      {installation.health_details.checks.http.error_message && (
+                        <div className="mt-2">
+                          <span className="text-sm text-gray-500">Error:</span>
+                          <p className="text-sm text-red-600 mt-1">{installation.health_details.checks.http.error_message}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {installation.health_details.checks?.database && (
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-2">Database Check</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-500">Status:</span>
+                        <span className={`text-sm font-medium ${
+                          installation.health_details.checks.database.status === 'healthy' 
+                            ? 'text-green-600' 
+                            : installation.health_details.checks.database.status === 'skipped'
+                            ? 'text-gray-600'
+                            : 'text-red-600'
+                        }`}>
+                          {installation.health_details.checks.database.status}
+                        </span>
+                      </div>
+                      {installation.health_details.checks.database.response_time && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500">Connection Time:</span>
+                          <span className="text-sm text-gray-900">{installation.health_details.checks.database.response_time}ms</span>
+                        </div>
+                      )}
+                      {installation.health_details.checks.database.error_message && (
+                        <div className="mt-2">
+                          <span className="text-sm text-gray-500">Error:</span>
+                          <p className="text-sm text-red-600 mt-1">{installation.health_details.checks.database.error_message}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recovery Tokens */}
         <div className="bg-white shadow rounded-lg mb-8">

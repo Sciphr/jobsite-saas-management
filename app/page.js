@@ -32,6 +32,47 @@ export default function SaaSManagementDashboard() {
     }
   };
 
+  const runHealthChecks = async () => {
+    try {
+      const response = await fetch('/api/health', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'run-all' })
+      });
+      
+      if (response.ok) {
+        alert('Health checks started for all installations. Refresh to see updated results.');
+        fetchDashboardData(); // Refresh the dashboard
+      } else {
+        alert('Failed to start health checks');
+      }
+    } catch (error) {
+      console.error('Error running health checks:', error);
+      alert('Error running health checks');
+    }
+  };
+
+  const runBackups = async () => {
+    if (confirm('This will start database backups for all installations. Continue?')) {
+      try {
+        const response = await fetch('/api/backups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'run-all-backups' })
+        });
+        
+        if (response.ok) {
+          alert('Backup job started for all installations. Check logs for progress.');
+        } else {
+          alert('Failed to start backups');
+        }
+      } catch (error) {
+        console.error('Error running backups:', error);
+        alert('Error running backups');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -62,7 +103,7 @@ export default function SaaSManagementDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
+        {/* Main Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -133,6 +174,145 @@ export default function SaaSManagementDashboard() {
                   </dl>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Management Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Health Status */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Healthy Installations</dt>
+                    <dd className="text-lg font-medium text-gray-900">{stats.health?.healthyInstallations || 0}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Backup Status */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Recent Backups</dt>
+                    <dd className="text-lg font-medium text-gray-900">{stats.backups?.recentSuccessfulBackups || 0}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Support Tickets */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Open Tickets</dt>
+                    <dd className="text-lg font-medium text-gray-900">{stats.support?.openTickets || 0}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* System Health Overview */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">System Health</dt>
+                    <dd className="text-lg font-medium text-gray-900">
+                      {stats.health?.unhealthyInstallations > 0 ? 
+                        <span className="text-red-600">Issues</span> : 
+                        <span className="text-green-600">Good</span>
+                      }
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button 
+                onClick={() => runHealthChecks()}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-green-900">Run Health Checks</h3>
+                    <p className="text-sm text-green-700">Check all installations</p>
+                  </div>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => runBackups()}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-blue-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-blue-900">Run Backups</h3>
+                    <p className="text-sm text-blue-700">Backup all databases</p>
+                  </div>
+                </div>
+              </button>
+
+              <Link 
+                href="/support"
+                className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-left hover:bg-purple-100 transition-colors block"
+              >
+                <div className="flex items-center">
+                  <svg className="h-6 w-6 text-purple-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-medium text-purple-900">Support Center</h3>
+                    <p className="text-sm text-purple-700">Manage customer tickets</p>
+                  </div>
+                </div>
+              </Link>
             </div>
           </div>
         </div>

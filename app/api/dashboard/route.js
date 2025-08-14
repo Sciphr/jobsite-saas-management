@@ -1,11 +1,17 @@
 import { getInstallations, getDashboardStats } from '../../lib/saas-recovery';
+import { getHealthOverview } from '../../lib/health-monitor';
+import { getBackupOverview } from '../../lib/backup-manager';
+import { getSupportStats } from '../../lib/support-tickets';
 
 export async function GET(request) {
   try {
-    // Get installations and stats in parallel
-    const [installationsResult, statsResult] = await Promise.all([
+    // Get all dashboard data in parallel
+    const [installationsResult, statsResult, healthResult, backupResult, supportResult] = await Promise.all([
       getInstallations(),
-      getDashboardStats()
+      getDashboardStats(),
+      getHealthOverview(),
+      getBackupOverview(),
+      getSupportStats()
     ]);
 
     if (!installationsResult.success) {
@@ -16,9 +22,19 @@ export async function GET(request) {
       return Response.json({ error: statsResult.error }, { status: 500 });
     }
 
+    // Health, backup, and support stats are optional - don't fail if they error
+    const healthStats = healthResult.success ? healthResult.stats : {};
+    const backupStats = backupResult.success ? backupResult.stats : {};
+    const supportStats = supportResult.success ? supportResult.stats : {};
+
     return Response.json({
       installations: installationsResult.installations,
-      stats: statsResult.stats
+      stats: {
+        ...statsResult.stats,
+        health: healthStats,
+        backups: backupStats,
+        support: supportStats
+      }
     });
 
   } catch (error) {

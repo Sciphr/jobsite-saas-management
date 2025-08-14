@@ -18,10 +18,23 @@ model saas_installations {
   updated_at           DateTime                    @default(now()) @db.Timestamptz(6)
   last_accessed_at     DateTime?                   @db.Timestamptz(6)
   billing_email        String?                     @db.VarChar(255)
-  billing_plan         String?                     @db.VarChar(100)
+  billing_plan         String?                     @default("Pro") @db.VarChar(100)
   notes                String?
+  billing_cycle        String?                     @default("monthly") @db.VarChar(50)
+  billing_amount       Decimal?                    @db.Decimal(10, 2)
+  next_billing_date    DateTime?                   @db.Timestamptz(6)
+  billing_status       String?                     @default("active") @db.VarChar(50)
+  last_health_check    DateTime?                   @db.Timestamptz(6)
+  health_status        String?                     @default("unknown") @db.VarChar(50)
+  health_details       Json?                       @db.Json
+  backup_enabled       Boolean?                    @default(true)
+  last_backup_at       DateTime?                   @db.Timestamptz(6)
+  backup_status        String?                     @default("pending") @db.VarChar(50)
+  saas_backup_logs     saas_backup_logs[]
+  saas_health_checks   saas_health_checks[]
   recovery_access_logs saas_recovery_access_logs[]
   recovery_tokens      saas_recovery_tokens[]
+  saas_support_tickets saas_support_tickets[]
 
   @@index([domain], map: "idx_saas_installations_domain")
   @@index([status], map: "idx_saas_installations_status")
@@ -81,4 +94,78 @@ model saas_admin_users {
   last_login_at DateTime? @db.Timestamptz(6)
 
   @@index([email], map: "idx_saas_admin_users_email")
+}
+
+model saas_backup_logs {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id    String             @db.Uuid
+  backup_type        String             @db.VarChar(100)
+  status             String             @db.VarChar(50)
+  file_size          BigInt?
+  file_path          String?
+  error_message      String?
+  started_at         DateTime?          @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?          @db.Timestamptz(6)
+  saas_installations saas_installations @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_backup_logs_installation")
+
+  @@index([installation_id], map: "idx_backup_logs_installation")
+  @@index([started_at], map: "idx_backup_logs_started_at")
+  @@index([status], map: "idx_backup_logs_status")
+}
+
+model saas_health_checks {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id    String             @db.Uuid
+  check_type         String             @db.VarChar(100)
+  status             String             @db.VarChar(50)
+  response_time      Int?
+  error_message      String?
+  details            Json?              @db.Json
+  checked_at         DateTime?          @default(now()) @db.Timestamptz(6)
+  saas_installations saas_installations @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_health_checks_installation")
+
+  @@index([checked_at], map: "idx_health_checks_checked_at")
+  @@index([installation_id], map: "idx_health_checks_installation")
+  @@index([status], map: "idx_health_checks_status")
+}
+
+model saas_support_messages {
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id            String               @db.Uuid
+  sender_type          String               @db.VarChar(20)
+  sender_name          String?              @db.VarChar(255)
+  sender_email         String?              @db.VarChar(255)
+  message              String
+  is_internal          Boolean?             @default(false)
+  created_at           DateTime?            @default(now()) @db.Timestamptz(6)
+  saas_support_tickets saas_support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_support_messages_ticket")
+
+  @@index([created_at], map: "idx_support_messages_created_at")
+  @@index([ticket_id], map: "idx_support_messages_ticket")
+}
+
+model saas_support_tickets {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id       String                  @db.Uuid
+  ticket_number         String                  @unique @db.VarChar(20)
+  title                 String                  @db.VarChar(255)
+  description           String
+  priority              String?                 @default("medium") @db.VarChar(20)
+  status                String?                 @default("open") @db.VarChar(20)
+  category              String?                 @db.VarChar(50)
+  customer_email        String?                 @db.VarChar(255)
+  customer_name         String?                 @db.VarChar(255)
+  assigned_to           String?                 @db.VarChar(255)
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  resolved_at           DateTime?               @db.Timestamptz(6)
+  resolution_notes      String?
+  saas_support_messages saas_support_messages[]
+  saas_installations    saas_installations      @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_support_tickets_installation")
+
+  @@index([created_at], map: "idx_support_tickets_created_at")
+  @@index([installation_id], map: "idx_support_tickets_installation")
+  @@index([ticket_number], map: "idx_support_tickets_number")
+  @@index([priority], map: "idx_support_tickets_priority")
+  @@index([status], map: "idx_support_tickets_status")
 }
