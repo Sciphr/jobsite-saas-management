@@ -19,19 +19,18 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { domain, companyName, adminEmail, databaseUrl, billingEmail, billingPlan, notes } = body;
+    const { companyName, adminName, adminEmail, billingEmail, billingPlan, notes } = body;
 
-    if (!domain || !companyName || !adminEmail) {
+    if (!companyName || !adminEmail) {
       return Response.json({ 
-        error: 'Domain, company name, and admin email are required' 
+        error: 'Company name and admin email are required' 
       }, { status: 400 });
     }
 
     const result = await createInstallation({
-      domain,
       companyName,
+      adminName,
       adminEmail,
-      databaseUrl,
       billingEmail,
       billingPlan,
       notes

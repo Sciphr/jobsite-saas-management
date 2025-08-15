@@ -140,14 +140,14 @@ export async function createInstallation(data) {
   try {
     const installation = await managementPrisma.saas_installations.create({
       data: {
-        domain: data.domain,
         company_name: data.companyName,
+        admin_name: data.adminName,
         admin_email: data.adminEmail,
-        database_url: data.databaseUrl,
         billing_email: data.billingEmail,
         billing_plan: data.billingPlan,
         notes: data.notes,
         status: 'active',
+        deployment_status: 'pending',
         updated_at: new Date()
       }
     });

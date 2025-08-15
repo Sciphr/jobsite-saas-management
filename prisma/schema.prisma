@@ -8,33 +8,41 @@ datasource db {
 }
 
 model saas_installations {
-  id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  domain               String                      @unique @db.VarChar(255)
-  company_name         String                      @db.VarChar(255)
-  admin_email          String                      @db.VarChar(255)
-  database_url         String?
-  status               String                      @default("active") @db.VarChar(50)
-  created_at           DateTime                    @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime                    @default(now()) @db.Timestamptz(6)
-  last_accessed_at     DateTime?                   @db.Timestamptz(6)
-  billing_email        String?                     @db.VarChar(255)
-  billing_plan         String?                     @default("Pro") @db.VarChar(100)
-  notes                String?
-  billing_cycle        String?                     @default("monthly") @db.VarChar(50)
-  billing_amount       Decimal?                    @db.Decimal(10, 2)
-  next_billing_date    DateTime?                   @db.Timestamptz(6)
-  billing_status       String?                     @default("active") @db.VarChar(50)
-  last_health_check    DateTime?                   @db.Timestamptz(6)
-  health_status        String?                     @default("unknown") @db.VarChar(50)
-  health_details       Json?                       @db.Json
-  backup_enabled       Boolean?                    @default(true)
-  last_backup_at       DateTime?                   @db.Timestamptz(6)
-  backup_status        String?                     @default("pending") @db.VarChar(50)
-  saas_backup_logs     saas_backup_logs[]
-  saas_health_checks   saas_health_checks[]
-  recovery_access_logs saas_recovery_access_logs[]
-  recovery_tokens      saas_recovery_tokens[]
-  saas_support_tickets saas_support_tickets[]
+  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  domain                String?                     @unique @db.VarChar(255)
+  company_name          String                      @db.VarChar(255)
+  admin_email           String                      @db.VarChar(255)
+  database_url          String?
+  status                String                      @default("active") @db.VarChar(50)
+  created_at            DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                    @default(now()) @db.Timestamptz(6)
+  last_accessed_at      DateTime?                   @db.Timestamptz(6)
+  billing_email         String?                     @db.VarChar(255)
+  billing_plan          String?                     @default("Pro") @db.VarChar(100)
+  notes                 String?
+  billing_cycle         String?                     @default("monthly") @db.VarChar(50)
+  billing_amount        Decimal?                    @db.Decimal(10, 2)
+  next_billing_date     DateTime?                   @db.Timestamptz(6)
+  billing_status        String?                     @default("active") @db.VarChar(50)
+  last_health_check     DateTime?                   @db.Timestamptz(6)
+  health_status         String?                     @default("unknown") @db.VarChar(50)
+  health_details        Json?                       @db.Json
+  backup_enabled        Boolean?                    @default(true)
+  last_backup_at        DateTime?                   @db.Timestamptz(6)
+  backup_status         String?                     @default("pending") @db.VarChar(50)
+  deployment_status     String?                     @default("pending") @db.VarChar(20)
+  deployment_url        String?
+  deployment_path       String?
+  port_number           Int?
+  subdomain             String?                     @db.VarChar(100)
+  admin_name            String?                     @db.VarChar(255)
+  saas_backup_logs      saas_backup_logs[]
+  saas_deployments      saas_deployments[]
+  saas_health_checks    saas_health_checks[]
+  saas_port_assignments saas_port_assignments[]
+  recovery_access_logs  saas_recovery_access_logs[]
+  recovery_tokens       saas_recovery_tokens[]
+  saas_support_tickets  saas_support_tickets[]
 
   @@index([domain], map: "idx_saas_installations_domain")
   @@index([status], map: "idx_saas_installations_status")
@@ -168,4 +176,46 @@ model saas_support_tickets {
   @@index([ticket_number], map: "idx_support_tickets_number")
   @@index([priority], map: "idx_support_tickets_priority")
   @@index([status], map: "idx_support_tickets_status")
+}
+
+model saas_deployment_templates {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String    @db.VarChar(100)
+  description       String?
+  git_repo_url      String
+  default_env_vars  Json?
+  deployment_script String?
+  is_active         Boolean?  @default(true)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model saas_deployments {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_id    String?             @db.Uuid
+  status             String              @db.VarChar(20)
+  deployment_path    String?
+  deployment_url     String?
+  environment_vars   Json?
+  error_message      String?
+  started_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?           @db.Timestamptz(6)
+  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  saas_installations saas_installations? @relation(fields: [installation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([installation_id], map: "idx_deployments_installation")
+  @@index([started_at], map: "idx_deployments_started_at")
+  @@index([status], map: "idx_deployments_status")
+}
+
+model saas_port_assignments {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  port_number        Int                 @unique
+  installation_id    String?             @db.Uuid
+  is_available       Boolean?            @default(true)
+  assigned_at        DateTime?           @db.Timestamptz(6)
+  released_at        DateTime?           @db.Timestamptz(6)
+  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  saas_installations saas_installations? @relation(fields: [installation_id], references: [id], onUpdate: NoAction)
 }

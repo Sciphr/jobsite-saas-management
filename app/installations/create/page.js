@@ -9,12 +9,12 @@ export default function CreateInstallation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    domain: '',
     companyName: '',
+    adminName: '',
     adminEmail: '',
-    databaseUrl: '',
     billingEmail: '',
-    billingPlan: 'basic',
+    useSameEmail: true,
+    billingPlan: 'Pro',
     notes: ''
   });
 
@@ -63,7 +63,7 @@ export default function CreateInstallation() {
               <Link href="/" className="text-indigo-600 hover:text-indigo-500 mr-4">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Installation</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Add New Customer</h1>
             </div>
           </div>
         </div>
@@ -77,24 +77,6 @@ export default function CreateInstallation() {
                 <div className="text-sm text-red-800">{error}</div>
               </div>
             )}
-
-            {/* Domain */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Domain *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.domain}
-                onChange={(e) => handleInputChange('domain', e.target.value)}
-                placeholder="e.g., customer1.yourapp.com or localhost:3000"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                The domain where this customer's installation is hosted
-              </p>
-            </div>
 
             {/* Company Name */}
             <div>
@@ -111,6 +93,21 @@ export default function CreateInstallation() {
               />
             </div>
 
+            {/* Admin Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.adminName}
+                onChange={(e) => handleInputChange('adminName', e.target.value)}
+                placeholder="e.g., John Smith"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
             {/* Admin Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -120,29 +117,17 @@ export default function CreateInstallation() {
                 type="email"
                 required
                 value={formData.adminEmail}
-                onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                onChange={(e) => {
+                  handleInputChange('adminEmail', e.target.value);
+                  if (formData.useSameEmail) {
+                    handleInputChange('billingEmail', e.target.value);
+                  }
+                }}
                 placeholder="e.g., admin@acme.com"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Primary admin contact for this installation
-              </p>
-            </div>
-
-            {/* Database URL */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Database URL
-              </label>
-              <input
-                type="text"
-                value={formData.databaseUrl}
-                onChange={(e) => handleInputChange('databaseUrl', e.target.value)}
-                placeholder="postgresql://user:password@host:port/database"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Optional: Database connection string for this installation
+                Primary admin contact for this customer
               </p>
             </div>
 
@@ -151,30 +136,49 @@ export default function CreateInstallation() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Billing Email
               </label>
-              <input
-                type="email"
-                value={formData.billingEmail}
-                onChange={(e) => handleInputChange('billingEmail', e.target.value)}
-                placeholder="e.g., billing@acme.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.useSameEmail}
+                    onChange={(e) => {
+                      handleInputChange('useSameEmail', e.target.checked);
+                      if (e.target.checked) {
+                        handleInputChange('billingEmail', formData.adminEmail);
+                      }
+                    }}
+                    className="mr-2 rounded border-gray-300 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-gray-700">Use same as admin email</span>
+                </div>
+                {!formData.useSameEmail && (
+                  <input
+                    type="email"
+                    value={formData.billingEmail}
+                    onChange={(e) => handleInputChange('billingEmail', e.target.value)}
+                    placeholder="e.g., billing@acme.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                )}
+                {formData.useSameEmail && (
+                  <div className="text-sm text-gray-500 italic">{formData.adminEmail || 'Will use admin email'}</div>
+                )}
+              </div>
             </div>
 
             {/* Billing Plan */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Billing Plan
+                Billing Plan *
               </label>
               <select
                 value={formData.billingPlan}
                 onChange={(e) => handleInputChange('billingPlan', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="trial">Trial</option>
-                <option value="basic">Basic</option>
-                <option value="professional">Professional</option>
-                <option value="enterprise">Enterprise</option>
-                <option value="custom">Custom</option>
+                <option value="Pro">Pro</option>
+                <option value="Enterprise">Enterprise</option>
+                <option value="Enterprise+">Enterprise+</option>
               </select>
             </div>
 
@@ -209,7 +213,7 @@ export default function CreateInstallation() {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Creating...
                   </div>
-                ) : 'Create Installation'}
+                ) : 'Create Customer'}
               </button>
             </div>
           </form>

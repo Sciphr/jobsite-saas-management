@@ -5,6 +5,272 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBackupHistory } from "../../hooks/useInstallations";
 
+function DeploymentConfig({ installation, onUpdate }) {
+  const [configData, setConfigData] = useState({
+    subdomain: '',
+    port_number: '',
+    custom_domain: '',
+    environment_vars: {}
+  });
+  const [loading, setLoading] = useState(false);
+  const [usedPorts, setUsedPorts] = useState([]);
+  const [usedDomains, setUsedDomains] = useState([]);
+  const [conflicts, setConflicts] = useState({});
+
+  useEffect(() => {
+    fetchConflictData();
+    generateDefaults();
+  }, [installation]);
+
+  const fetchConflictData = async () => {
+    try {
+      const response = await fetch('/api/deployments/conflicts');
+      if (response.ok) {
+        const data = await response.json();
+        setUsedPorts(data.usedPorts || []);
+        setUsedDomains(data.usedDomains || []);
+      }
+    } catch (error) {
+      console.error('Error fetching conflict data:', error);
+    }
+  };
+
+  const generateDefaults = () => {
+    const subdomain = installation.company_name?.toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || '';
+    
+    setConfigData(prev => ({
+      ...prev,
+      subdomain,
+      port_number: ''
+    }));
+  };
+
+  const checkConflicts = (field, value) => {
+    const newConflicts = { ...conflicts };
+    
+    if (field === 'subdomain' && usedDomains.includes(value)) {
+      newConflicts.subdomain = 'This subdomain is already in use';
+    } else if (field === 'subdomain') {
+      delete newConflicts.subdomain;
+    }
+    
+    if (field === 'port_number' && usedPorts.includes(parseInt(value))) {
+      newConflicts.port_number = 'This port is already in use';
+    } else if (field === 'port_number') {
+      delete newConflicts.port_number;
+    }
+    
+    setConflicts(newConflicts);
+  };
+
+  const handleInputChange = (field, value) => {
+    setConfigData(prev => ({ ...prev, [field]: value }));
+    checkConflicts(field, value);
+  };
+
+  const suggestPort = () => {
+    const basePort = 3001;
+    let suggestedPort = basePort;
+    while (usedPorts.includes(suggestedPort)) {
+      suggestedPort++;
+    }
+    handleInputChange('port_number', suggestedPort.toString());
+  };
+
+  const handleSaveConfig = async () => {
+    if (Object.keys(conflicts).length > 0) {
+      alert('Please resolve conflicts before saving');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/installations/${installation.id}/deployment-config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+
+      if (response.ok) {
+        alert('Deployment configuration saved successfully');
+        onUpdate(); // Refresh the parent component
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to save configuration: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving config:', error);
+      alert('Error saving configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeploy = async () => {
+    if (Object.keys(conflicts).length > 0) {
+      alert('Please resolve conflicts before deploying');
+      return;
+    }
+
+    if (!configData.subdomain || !configData.port_number) {
+      alert('Please configure subdomain and port before deploying');
+      return;
+    }
+
+    if (confirm(`Deploy ${installation.company_name} with the current configuration?`)) {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'deploy-customer',
+            installation_id: installation.id,
+            company_name: installation.company_name,
+            admin_email: installation.admin_email,
+            subdomain: configData.subdomain,
+            port_number: parseInt(configData.port_number),
+            billing_plan: installation.billing_plan
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          alert(`Deployment started! Estimated time: ${data.estimatedTime}`);
+          onUpdate(); // Refresh to show deployment status
+        } else {
+          alert(`Deployment failed: ${data.error}`);
+        }
+      } catch (error) {
+        console.error('Error starting deployment:', error);
+        alert('Error starting deployment');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <h4 className="text-sm font-medium text-blue-800 mb-2">Configure Deployment Settings</h4>
+        <p className="text-sm text-blue-700">
+          Configure the domain, port, and environment variables for this customer's deployment. 
+          Once configured, you can deploy the customer application.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Subdomain */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Subdomain *
+          </label>
+          <div className="flex">
+            <input
+              type="text"
+              required
+              value={configData.subdomain}
+              onChange={(e) => handleInputChange('subdomain', e.target.value)}
+              placeholder="customer-name"
+              className={`flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                conflicts.subdomain ? 'border-red-300' : 'border-gray-300'
+              }`}
+            />
+            <span className="px-3 py-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
+              .yourdomain.com
+            </span>
+          </div>
+          {conflicts.subdomain && (
+            <p className="text-sm text-red-600 mt-1">{conflicts.subdomain}</p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Will be: https://{configData.subdomain || 'subdomain'}.yourdomain.com
+          </p>
+        </div>
+
+        {/* Port */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Port Number *
+          </label>
+          <div className="flex">
+            <input
+              type="number"
+              required
+              min="3000"
+              max="9999"
+              value={configData.port_number}
+              onChange={(e) => handleInputChange('port_number', e.target.value)}
+              placeholder="3001"
+              className={`flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                conflicts.port_number ? 'border-red-300' : 'border-gray-300'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={suggestPort}
+              className="px-3 py-2 bg-indigo-50 border border-l-0 border-gray-300 rounded-r-md text-indigo-600 hover:bg-indigo-100 text-sm"
+            >
+              Suggest
+            </button>
+          </div>
+          {conflicts.port_number && (
+            <p className="text-sm text-red-600 mt-1">{conflicts.port_number}</p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Application will run on port {configData.port_number || 'XXXX'}
+          </p>
+        </div>
+      </div>
+
+      {/* Custom Domain (Optional) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Custom Domain (Optional)
+        </label>
+        <input
+          type="text"
+          value={configData.custom_domain}
+          onChange={(e) => handleInputChange('custom_domain', e.target.value)}
+          placeholder="e.g., app.customer.com"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          If provided, this will be used instead of the subdomain
+        </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end space-x-4">
+        <button
+          onClick={handleSaveConfig}
+          disabled={loading || Object.keys(conflicts).length > 0}
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Saving...' : 'Save Configuration'}
+        </button>
+        <button
+          onClick={handleDeploy}
+          disabled={loading || Object.keys(conflicts).length > 0 || !configData.subdomain || !configData.port_number}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Deploying...
+            </div>
+          ) : 'Deploy Customer'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function InstallationDetail({ params }) {
   const [installation, setInstallation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -333,6 +599,82 @@ export default function InstallationDetail({ params }) {
             </dl>
           </div>
         </div>
+
+        {/* Deployment Configuration */}
+        {installation?.deployment_status === 'pending' && (
+          <div className="bg-white shadow rounded-lg mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Deployment Configuration</h2>
+            </div>
+            <div className="p-6">
+              <DeploymentConfig installation={installation} onUpdate={fetchInstallation} />
+            </div>
+          </div>
+        )}
+
+        {/* Deployment Status */}
+        {installation?.deployment_status && installation.deployment_status !== 'pending' && (
+          <div className="bg-white shadow rounded-lg mb-8">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Deployment Status</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Status</dt>
+                  <dd className="flex items-center">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      installation.deployment_status === 'completed' 
+                        ? 'bg-green-100 text-green-800' 
+                        : installation.deployment_status === 'failed'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {installation.deployment_status}
+                    </span>
+                  </dd>
+                </div>
+                {installation.deployment_url && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Deployment URL</dt>
+                    <dd className="text-sm text-gray-900">
+                      <a 
+                        href={installation.deployment_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-500"
+                      >
+                        {installation.deployment_url}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {installation.port_number && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Port</dt>
+                    <dd className="text-sm text-gray-900">{installation.port_number}</dd>
+                  </div>
+                )}
+                {installation.subdomain && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Subdomain</dt>
+                    <dd className="text-sm text-gray-900">{installation.subdomain}</dd>
+                  </div>
+                )}
+              </div>
+              {installation.deployment_status === 'completed' && (
+                <div className="mt-4">
+                  <Link
+                    href={`/deployments?installation=${installation.id}`}
+                    className="text-indigo-600 hover:text-indigo-500 text-sm"
+                  >
+                    View Deployment History →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Management Actions */}
         <div className="bg-white shadow rounded-lg mb-8">
