@@ -1,5 +1,6 @@
 import './globals.css'
 import QueryProvider from './components/QueryProvider'
+import { ThemeProvider } from './components/ThemeProvider'
 
 export const metadata = {
   title: 'JobSite SaaS Management',
@@ -10,9 +11,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

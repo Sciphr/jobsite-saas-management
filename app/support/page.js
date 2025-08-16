@@ -14,6 +14,7 @@ function SupportTicketsContent() {
   const [selectedInstallation, setSelectedInstallation] = useState(installationFilter || '');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchTickets();
@@ -87,15 +88,15 @@ function SupportTicketsContent() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mr-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
+            <div className="flex flex-col w-full">
+              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                 Support Tickets
                 {selectedInstallationName && (
-                  <span className="text-lg font-normal text-gray-600 ml-2">
+                  <span className="block sm:inline text-base sm:text-lg font-normal text-gray-600 sm:ml-2 mt-1 sm:mt-0">
                     for {selectedInstallationName}
                   </span>
                 )}
@@ -105,11 +106,20 @@ function SupportTicketsContent() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Filters */}
-        <div className="bg-white shadow rounded-lg mb-8 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white shadow rounded-lg mb-6 sm:mb-8">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg font-medium text-gray-900">Filters</h2>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="sm:hidden bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors"
+              >
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </button>
+            </div>
+            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 ${showFilters ? 'block' : 'hidden sm:grid'}`}>
             {/* Installation Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -118,7 +128,7 @@ function SupportTicketsContent() {
               <select
                 value={selectedInstallation}
                 onChange={(e) => setSelectedInstallation(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="">All Installations</option>
                 {installations.map(installation => (
@@ -137,7 +147,7 @@ function SupportTicketsContent() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="all">All Statuses</option>
                 <option value="open">Open</option>
@@ -155,7 +165,7 @@ function SupportTicketsContent() {
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="all">All Priorities</option>
                 <option value="high">High</option>
@@ -164,12 +174,13 @@ function SupportTicketsContent() {
               </select>
             </div>
           </div>
+          </div>
         </div>
 
         {/* Tickets Table */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">
               Support Tickets ({tickets.length})
             </h2>
           </div>
@@ -180,32 +191,83 @@ function SupportTicketsContent() {
               <p className="text-gray-600">Loading tickets...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              {/* Mobile Card Layout */}
+              <div className="sm:hidden space-y-4 p-4">
+              {tickets.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  {selectedInstallation ? 
+                    `No support tickets found for ${selectedInstallationName}` :
+                    'No support tickets found'
+                  }
+                </div>
+              ) : (
+                tickets.map((ticket) => (
+                  <div key={ticket.id} className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 text-sm">#{ticket.ticket_number}</div>
+                        <div className="text-sm text-gray-900 font-medium mt-1">{ticket.title}</div>
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">{ticket.description}</div>
+                      </div>
+                      <div className="flex gap-1 ml-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityBadgeClass(ticket.priority)}`}>
+                          {ticket.priority}
+                        </span>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(ticket.status)}`}>
+                          {ticket.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div>
+                        <span className="font-medium">{ticket.customer_name || 'N/A'}</span>
+                        {ticket.installation?.company_name && (
+                          <span className="ml-2">• {ticket.installation.company_name}</span>
+                        )}
+                      </div>
+                      <div>{new Date(ticket.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div className="pt-2">
+                      <Link 
+                        href={`/support/tickets/${ticket.id}`}
+                        className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center justify-center w-full"
+                      >
+                        View Ticket
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* Desktop Table Layout */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ticket #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Installation
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Priority
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -213,7 +275,7 @@ function SupportTicketsContent() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {tickets.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="8" className="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-500 text-sm">
                         {selectedInstallation ? 
                           `No support tickets found for ${selectedInstallationName}` :
                           'No support tickets found'
@@ -223,28 +285,28 @@ function SupportTicketsContent() {
                   ) : (
                     tickets.map((ticket) => (
                       <tr key={ticket.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
                             #{ticket.ticket_number}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 font-medium">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="text-xs sm:text-sm text-gray-900 font-medium truncate">
                             {ticket.title}
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                          <div className="text-xs text-gray-500 truncate max-w-xs sm:max-w-sm md:max-w-md">
                             {ticket.description}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {ticket.customer_name || 'N/A'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
                             {ticket.customer_email}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {ticket.installation?.company_name || 'N/A'}
                           </div>
@@ -252,23 +314,23 @@ function SupportTicketsContent() {
                             {ticket.installation?.domain}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityBadgeClass(ticket.priority)}`}>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getPriorityBadgeClass(ticket.priority)}`}>
                             {ticket.priority}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(ticket.status)}`}>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(ticket.status)}`}>
                             {ticket.status.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(ticket.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Link 
                             href={`/support/tickets/${ticket.id}`}
-                            className="text-indigo-600 hover:text-indigo-500"
+                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 cursor-pointer px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors inline-flex items-center justify-center"
                           >
                             View
                           </Link>
@@ -279,6 +341,7 @@ function SupportTicketsContent() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </main>

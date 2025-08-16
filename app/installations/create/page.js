@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import DarkModeToggle from "../../components/DarkModeToggle";
 
 export default function CreateInstallation() {
   const router = useRouter();
@@ -58,22 +59,23 @@ export default function CreateInstallation() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mr-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center w-full">
+              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-0 sm:mr-4 cursor-pointer">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Customer</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex-1">Add New Customer</h1>
+              <DarkModeToggle />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:p-4">
                 <div className="text-sm text-red-800">{error}</div>
               </div>
             )}
@@ -89,7 +91,7 @@ export default function CreateInstallation() {
                 value={formData.companyName}
                 onChange={(e) => handleInputChange('companyName', e.target.value)}
                 placeholder="e.g., Acme Corporation"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
@@ -104,7 +106,7 @@ export default function CreateInstallation() {
                 value={formData.adminName}
                 onChange={(e) => handleInputChange('adminName', e.target.value)}
                 placeholder="e.g., John Smith"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
@@ -124,7 +126,7 @@ export default function CreateInstallation() {
                   }
                 }}
                 placeholder="e.g., admin@acme.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Primary admin contact for this customer
@@ -157,7 +159,7 @@ export default function CreateInstallation() {
                     value={formData.billingEmail}
                     onChange={(e) => handleInputChange('billingEmail', e.target.value)}
                     placeholder="e.g., billing@acme.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
                   />
                 )}
                 {formData.useSameEmail && (
@@ -174,7 +176,7 @@ export default function CreateInstallation() {
               <select
                 value={formData.billingPlan}
                 onChange={(e) => handleInputChange('billingPlan', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="Pro">Pro</option>
                 <option value="Enterprise">Enterprise</option>
@@ -192,21 +194,21 @@ export default function CreateInstallation() {
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 rows={4}
                 placeholder="Any additional notes about this installation..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
               <Link
                 href="/"
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer text-center sm:text-left"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 sm:py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
               >
                 {loading ? (
                   <div className="flex items-center">

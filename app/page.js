@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useInstallations } from "./hooks/useInstallations";
+import DarkModeToggle from "./components/DarkModeToggle";
 
 export default function SaaSManagementDashboard() {
   const [isRunningHealthChecks, setIsRunningHealthChecks] = useState(false);
@@ -151,23 +152,27 @@ export default function SaaSManagementDashboard() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4">
             <div className="flex items-center">
               <Image
                 src="/icon.png"
                 alt="Asari Logo"
-                width={40}
-                height={40}
-                className="mr-3"
+                width={32}
+                height={32}
+                className="mr-2 sm:mr-3 w-8 h-8 sm:w-10 sm:h-10"
               />
-              <h1 className="text-3xl font-bold text-gray-900">
-                Asari Management Dashboard
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                <span className="hidden sm:inline">
+                  Asari Management Dashboard
+                </span>
+                <span className="sm:hidden">Dashboard</span>
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <DarkModeToggle />
               <Link
                 href="/installations/create"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer flex-1 sm:flex-none text-center inline-flex items-center justify-center"
               >
                 Add Customer
               </Link>
@@ -178,13 +183,13 @@ export default function SaaSManagementDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <svg
-                    className="h-6 w-6 text-gray-400"
+                    className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -197,12 +202,12 @@ export default function SaaSManagementDashboard() {
                     />
                   </svg>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-3 sm:ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                       Total Installations
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-base sm:text-lg font-medium text-gray-900">
                       {stats.totalInstallations}
                     </dd>
                   </dl>
@@ -309,7 +314,7 @@ export default function SaaSManagementDashboard() {
         </div>
 
         {/* Management Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Health Status */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-5">
@@ -453,11 +458,11 @@ export default function SaaSManagementDashboard() {
             <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <button
                 onClick={() => runHealthChecks()}
                 disabled={isRunningHealthChecks}
-                className="bg-green-50 border border-green-200 rounded-lg p-4 text-left hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 text-left hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
               >
                 <div className="flex items-center">
                   {isRunningHealthChecks ? (
@@ -493,7 +498,7 @@ export default function SaaSManagementDashboard() {
               <button
                 onClick={() => runBackups()}
                 disabled={isRunningBackups}
-                className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 text-left hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
               >
                 <div className="flex items-center">
                   {isRunningBackups ? (
@@ -526,7 +531,7 @@ export default function SaaSManagementDashboard() {
 
               <Link
                 href="/support"
-                className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-left hover:bg-purple-100 transition-colors block"
+                className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4 text-left hover:bg-purple-100 transition-colors block cursor-pointer touch-manipulation"
               >
                 <div className="flex items-center">
                   <svg
@@ -556,7 +561,7 @@ export default function SaaSManagementDashboard() {
               <button
                 onClick={() => cleanupOldBackups()}
                 disabled={isCleaningUpBackups}
-                className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-left hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 text-left hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
               >
                 <div className="flex items-center">
                   {isCleaningUpBackups ? (
@@ -591,7 +596,7 @@ export default function SaaSManagementDashboard() {
 
               <Link
                 href="/deployments"
-                className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-left hover:bg-indigo-100 transition-colors block"
+                className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4 text-left hover:bg-indigo-100 transition-colors block cursor-pointer touch-manipulation"
               >
                 <div className="flex items-center">
                   <svg
@@ -623,28 +628,106 @@ export default function SaaSManagementDashboard() {
 
         {/* Installations Table */}
         <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">
               Customer Installations
             </h2>
           </div>
-          <div className="overflow-x-auto">
+          {/* Mobile Card Layout */}
+          <div className="sm:hidden space-y-4 p-4">
+            {installations.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                No installations found.{" "}
+                <Link
+                  href="/installations/create"
+                  className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
+                >
+                  Add your first installation
+                </Link>
+              </div>
+            ) : (
+              installations.map((installation) => (
+                <div
+                  key={installation.id}
+                  className="bg-gray-50 rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <span className="text-sm font-medium text-indigo-600">
+                          {installation.company_name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900">
+                        {installation.company_name}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        {installation.admin_email}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <a
+                          href={`https://${installation.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
+                        >
+                          {installation.domain}
+                        </a>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          installation.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : installation.status === "suspended"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {installation.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/installations/${installation.id}`}
+                      className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 cursor-pointer px-3 py-2 rounded-md text-xs sm:text-sm font-medium text-center transition-colors flex-1"
+                    >
+                      View
+                    </Link>
+                    <Link
+                      href={`/recovery/create?installation=${installation.id}`}
+                      className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 hover:text-yellow-700 cursor-pointer px-3 py-2 rounded-md text-xs sm:text-sm font-medium text-center transition-colors flex-1"
+                    >
+                      Recovery
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Company
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Domain
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Last Accessed
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -654,12 +737,12 @@ export default function SaaSManagementDashboard() {
                   <tr>
                     <td
                       colSpan="5"
-                      className="px-6 py-12 text-center text-gray-500"
+                      className="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-500 text-sm"
                     >
                       No installations found.{" "}
                       <Link
                         href="/installations/create"
-                        className="text-indigo-600 hover:text-indigo-500"
+                        className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
                       >
                         Add your first installation
                       </Link>
@@ -668,40 +751,40 @@ export default function SaaSManagementDashboard() {
                 ) : (
                   installations.map((installation) => (
                     <tr key={installation.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                              <span className="text-sm font-medium text-indigo-600">
+                          <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                              <span className="text-xs sm:text-sm font-medium text-indigo-600">
                                 {installation.company_name
                                   .charAt(0)
                                   .toUpperCase()}
                               </span>
                             </div>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                          <div className="ml-2 sm:ml-4 min-w-0 flex-1">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                               {installation.company_name}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-xs text-gray-500 truncate sm:block">
                               {installation.admin_email}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <a
                           href={`https://${installation.domain}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-500"
+                          className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
                         >
                           {installation.domain}
                         </a>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${
                             installation.status === "active"
                               ? "bg-green-100 text-green-800"
                               : installation.status === "suspended"
@@ -712,24 +795,24 @@ export default function SaaSManagementDashboard() {
                           {installation.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {installation.last_accessed_at
                           ? new Date(
                               installation.last_accessed_at
                             ).toLocaleDateString()
                           : "Never"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
                           <Link
                             href={`/installations/${installation.id}`}
-                            className="text-indigo-600 hover:text-indigo-500"
+                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 cursor-pointer px-3 py-2 rounded-md text-xs sm:text-sm font-medium text-center transition-colors"
                           >
                             View
                           </Link>
                           <Link
                             href={`/recovery/create?installation=${installation.id}`}
-                            className="text-yellow-600 hover:text-yellow-500"
+                            className="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 hover:text-yellow-700 cursor-pointer px-3 py-2 rounded-md text-xs sm:text-sm font-medium text-center transition-colors"
                           >
                             Recovery
                           </Link>

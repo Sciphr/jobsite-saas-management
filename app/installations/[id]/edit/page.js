@@ -114,22 +114,23 @@ export default function EditInstallation({ params }) {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href={`/installations/${installationId}`} className="text-indigo-600 hover:text-indigo-500 mr-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
+            <div className="flex flex-col w-full">
+              <Link href={`/installations/${installationId}`} className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Installation
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Edit Installation: {installation?.company_name}
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                <span className="hidden sm:inline">Edit Installation: {installation?.company_name}</span>
+                <span className="sm:hidden">Edit: {installation?.company_name}</span>
               </h1>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {updateMutation.error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <div className="text-sm text-red-800">
@@ -154,7 +155,7 @@ export default function EditInstallation({ params }) {
                 required
                 value={formData.companyName}
                 onChange={(e) => handleInputChange('companyName', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
@@ -168,7 +169,7 @@ export default function EditInstallation({ params }) {
                 required
                 value={formData.domain}
                 onChange={(e) => handleInputChange('domain', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
                 The domain where this customer's installation is hosted
@@ -185,7 +186,7 @@ export default function EditInstallation({ params }) {
                 required
                 value={formData.adminEmail}
                 onChange={(e) => handleInputChange('adminEmail', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
@@ -211,7 +212,7 @@ export default function EditInstallation({ params }) {
                 type="email"
                 value={formData.billingEmail}
                 onChange={(e) => handleInputChange('billingEmail', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
@@ -223,7 +224,7 @@ export default function EditInstallation({ params }) {
               <select
                 value={formData.billingPlan}
                 onChange={(e) => handleInputChange('billingPlan', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="Pro">Pro</option>
                 <option value="Enterprise">Enterprise</option>
@@ -239,7 +240,7 @@ export default function EditInstallation({ params }) {
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
@@ -256,7 +257,7 @@ export default function EditInstallation({ params }) {
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 

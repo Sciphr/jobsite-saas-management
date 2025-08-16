@@ -165,20 +165,20 @@ export default function TicketDetail({ params }) {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/support" className="text-indigo-600 hover:text-indigo-500 mr-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4">
+            <div className="flex flex-col w-full">
+              <Link href="/support" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Support Tickets
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                 Ticket #{ticket.ticket_number}
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center w-full sm:w-auto">
               {ticket.installation && (
                 <Link 
                   href={`/installations/${ticket.installation.id}`}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium cursor-pointer w-full sm:w-auto text-center transition-colors"
                 >
                   View Installation
                 </Link>
@@ -188,21 +188,21 @@ export default function TicketDetail({ params }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Ticket Details */}
           <div className="lg:col-span-2">
             {/* Ticket Info */}
             <div className="bg-white shadow rounded-lg mb-8">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">{ticket.title}</h2>
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-base sm:text-lg font-medium text-gray-900">{ticket.title}</h2>
               </div>
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="prose max-w-none">
                   <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
                 </div>
                 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <span className="text-sm font-medium text-gray-500">Customer:</span>
                     <div className="mt-1">

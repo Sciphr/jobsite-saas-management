@@ -177,7 +177,7 @@ function DeploymentConfig({ installation, onUpdate }) {
               value={configData.subdomain}
               onChange={(e) => handleInputChange('subdomain', e.target.value)}
               placeholder="customer-name"
-              className={`flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`flex-1 px-3 py-2.5 sm:py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm ${
                 conflicts.subdomain ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -207,14 +207,14 @@ function DeploymentConfig({ installation, onUpdate }) {
               value={configData.port_number}
               onChange={(e) => handleInputChange('port_number', e.target.value)}
               placeholder="3001"
-              className={`flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              className={`flex-1 px-3 py-2.5 sm:py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm ${
                 conflicts.port_number ? 'border-red-300' : 'border-gray-300'
               }`}
             />
             <button
               type="button"
               onClick={suggestPort}
-              className="px-3 py-2 bg-indigo-50 border border-l-0 border-gray-300 rounded-r-md text-indigo-600 hover:bg-indigo-100 text-sm"
+              className="px-3 py-2.5 sm:py-2 bg-indigo-50 border border-l-0 border-gray-300 rounded-r-md text-indigo-600 hover:bg-indigo-100 text-sm cursor-pointer touch-manipulation"
             >
               Suggest
             </button>
@@ -238,7 +238,7 @@ function DeploymentConfig({ installation, onUpdate }) {
           value={configData.custom_domain}
           onChange={(e) => handleInputChange('custom_domain', e.target.value)}
           placeholder="e.g., app.customer.com"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
         />
         <p className="text-sm text-gray-500 mt-1">
           If provided, this will be used instead of the subdomain
@@ -250,14 +250,14 @@ function DeploymentConfig({ installation, onUpdate }) {
         <button
           onClick={handleSaveConfig}
           disabled={loading || Object.keys(conflicts).length > 0}
-          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
         >
           {loading ? 'Saving...' : 'Save Configuration'}
         </button>
         <button
           onClick={handleDeploy}
           disabled={loading || Object.keys(conflicts).length > 0 || !configData.subdomain || !configData.port_number}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 sm:py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
         >
           {loading ? (
             <div className="flex items-center">
@@ -460,25 +460,25 @@ export default function InstallationDetail({ params }) {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mr-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4">
+            <div className="flex flex-col w-full">
+              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                 {installation?.company_name}
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
               <Link 
                 href={`/installations/${installation?.id}/edit`}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center"
               >
                 Edit Installation
               </Link>
               <Link 
                 href={`/recovery/create?installation=${installation?.id}`}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center"
               >
                 Create Recovery Token
               </Link>
@@ -487,14 +487,14 @@ export default function InstallationDetail({ params }) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Installation Info */}
-        <div className="bg-white shadow rounded-lg mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Installation Details</h2>
+        <div className="bg-white shadow rounded-lg mb-6 sm:mb-8">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900">Installation Details</h2>
           </div>
-          <div className="px-6 py-4">
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="px-4 sm:px-6 py-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Company Name</dt>
                 <dd className="text-sm text-gray-900">{installation?.company_name}</dd>
@@ -506,7 +506,7 @@ export default function InstallationDetail({ params }) {
                     href={`https://${installation?.domain}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-indigo-600 hover:text-indigo-500"
+                    className="text-indigo-600 hover:text-indigo-500 cursor-pointer break-all"
                   >
                     {installation?.domain}
                   </a>
@@ -1117,11 +1117,11 @@ export default function InstallationDetail({ params }) {
                     type="text"
                     readOnly
                     value={`${installation.domain.includes('localhost') ? 'http' : 'https'}://${installation.domain}/api/recovery/access?token=${selectedToken.token}`}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono"
+                    className="flex-1 px-3 py-2.5 sm:py-2 border border-gray-300 rounded-l-md bg-gray-50 text-xs sm:text-sm font-mono"
                   />
                   <button
                     onClick={() => handleCopyRecoveryUrl(selectedToken)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 text-sm"
+                    className="px-4 py-2.5 sm:py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 text-sm cursor-pointer touch-manipulation"
                   >
                     Copy
                   </button>
@@ -1182,7 +1182,7 @@ export default function InstallationDetail({ params }) {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowTokenModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cursor-pointer touch-manipulation"
                 >
                   Close
                 </button>
@@ -1192,7 +1192,7 @@ export default function InstallationDetail({ params }) {
                       handleRevokeToken(selectedToken.id);
                       setShowTokenModal(false);
                     }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    className="px-4 py-2.5 sm:py-2 bg-red-600 text-white rounded-md hover:bg-red-700 cursor-pointer touch-manipulation"
                   >
                     Revoke Token
                   </button>
