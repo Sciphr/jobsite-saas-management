@@ -24,9 +24,10 @@ export async function GET(request) {
       });
     });
 
-    // Start the WebSocket server on a different port
-    httpServer.listen(3101, () => {
-      console.log('WebSocket server listening on port 3101');
+    // Start the WebSocket server on a different port, bind to all interfaces for production
+    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    httpServer.listen(3101, host, () => {
+      console.log(`WebSocket server listening on ${host}:3101`);
     });
   }
 

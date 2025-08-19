@@ -29,8 +29,24 @@ export default function DeploymentProgress({ installationId, isOpen, onClose }) 
 
   useEffect(() => {
     if (isOpen && installationId) {
-      // Initialize WebSocket connection
-      const newSocket = io('http://localhost:3101');
+      // Initialize WebSocket connection - use current host for production compatibility
+      const socketUrl = process.env.NODE_ENV === 'production' 
+        ? `${window.location.protocol}//${window.location.hostname}:3101`
+        : 'http://localhost:3101';
+      console.log('Attempting to connect to WebSocket:', socketUrl);
+      const newSocket = io(socketUrl);
+      
+      newSocket.on('connect', () => {
+        console.log('WebSocket connected successfully');
+      });
+      
+      newSocket.on('connect_error', (error) => {
+        console.error('WebSocket connection error:', error);
+      });
+      
+      newSocket.on('disconnect', (reason) => {
+        console.log('WebSocket disconnected:', reason);
+      });
       setSocket(newSocket);
 
       // Initialize progress array

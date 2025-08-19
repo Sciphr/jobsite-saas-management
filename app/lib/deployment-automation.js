@@ -688,11 +688,29 @@ export async function createAdminUser(deploymentPath, adminEmail, companyName) {
     const createUserScript = `
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+const fs = require('fs');
 
 async function createAdminUser() {
+  // Read DATABASE_URL from .env file manually (no dotenv dependency)
+  let databaseUrl;
+  try {
+    const envContent = fs.readFileSync('.env', 'utf8');
+    const envLines = envContent.split('\\n');
+    const dbUrlLine = envLines.find(line => line.startsWith('DATABASE_URL='));
+    databaseUrl = dbUrlLine ? dbUrlLine.split('=')[1].replace(/"/g, '') : null;
+  } catch (error) {
+    console.error('Error reading .env file:', error);
+    process.exit(1);
+  }
+  
+  if (!databaseUrl) {
+    console.error('DATABASE_URL not found in .env file');
+    process.exit(1);
+  }
+  
+  console.log('Using database URL from .env file');
   const client = new Client({
-    connectionString: process.env.DATABASE_URL
+    connectionString: databaseUrl
   });
   
   try {
