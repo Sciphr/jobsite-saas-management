@@ -686,49 +686,61 @@ export async function createAdminUser(deploymentPath, adminEmail, companyName) {
     
     // Create a Node.js script to create the admin user
     const createUserScript = `
-const { PrismaClient } = require('@prisma/client');
+const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 async function createAdminUser() {
-  const prisma = new PrismaClient();
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL
+  });
   
   try {
-    // Check if admin user already exists
-    const existingUser = await prisma.users.findFirst({
-      where: { email: '${adminEmail}' }
-    });
+    await client.connect();
+    console.log('Connected to customer database');
     
-    if (existingUser) {
-      console.log('Admin user already exists:', existingUser.email);
-      await prisma.$disconnect();
+    // Check if admin user already exists
+    const existingUserQuery = 'SELECT * FROM users WHERE email = $1 LIMIT 1';
+    const existingResult = await client.query(existingUserQuery, ['${adminEmail}']);
+    
+    if (existingResult.rows.length > 0) {
+      console.log('Admin user already exists:', existingResult.rows[0].email);
+      await client.end();
       return;
     }
     
     // Hash the password
     const hashedPassword = await bcrypt.hash('${adminPassword}', 12);
     
-    // Create admin user in users table with correct schema
-    const adminUser = await prisma.users.create({
-      data: {
-        email: '${adminEmail}',
-        password: hashedPassword,
-        firstName: 'Admin',
-        lastName: 'Admin',
-        role: 'admin',
-        privilegeLevel: 3,
-        isActive: true,
-        is_active: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    });
+    // Create admin user with direct SQL insert
+    const insertQuery = \`
+      INSERT INTO users (
+        email, password, "firstName", "lastName", role, "privilegeLevel", 
+        "isActive", is_active, "createdAt", "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, email
+    \`;
     
-    console.log('Admin user created successfully:', adminUser.email, 'ID:', adminUser.id);
+    const values = [
+      '${adminEmail}',
+      hashedPassword,
+      'Admin',
+      'Admin', 
+      'admin',
+      3,
+      true,
+      true,
+      new Date(),
+      new Date()
+    ];
     
-    await prisma.$disconnect();
+    const result = await client.query(insertQuery, values);
+    console.log('Admin user created successfully:', result.rows[0].email, 'ID:', result.rows[0].id);
+    
+    await client.end();
   } catch (error) {
     console.error('Error creating admin user:', error);
-    await prisma.$disconnect();
+    await client.end();
     process.exit(1);
   }
 }

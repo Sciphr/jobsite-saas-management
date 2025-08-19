@@ -138,6 +138,9 @@ export async function getDashboardStats() {
  */
 export async function createInstallation(data) {
   try {
+    // Generate a temporary unique domain placeholder until deployment configuration
+    const tempDomain = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.pending.local`;
+    
     const installation = await managementPrisma.saas_installations.create({
       data: {
         company_name: data.companyName,
@@ -148,6 +151,7 @@ export async function createInstallation(data) {
         notes: data.notes,
         status: 'active',
         deployment_status: 'pending',
+        domain: tempDomain, // Temporary domain until configuration
         updated_at: new Date()
       }
     });
