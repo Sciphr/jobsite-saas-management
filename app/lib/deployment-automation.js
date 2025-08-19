@@ -424,18 +424,57 @@ export async function createMinioBucket(bucketName) {
 }
 
 /**
- * Create Supabase bucket for backups (placeholder - you'll need to implement based on your Supabase setup)
+ * Create Supabase bucket for backups
  */
 export async function createSupabaseBucket(bucketName, customerData) {
   try {
     console.log(`Creating Supabase backup bucket: ${bucketName}`);
     
-    // This is a placeholder - you'll need to implement the actual Supabase bucket creation
-    // based on your Supabase configuration and API credentials
+    // Import Supabase client
+    const { createClient } = require('@supabase/supabase-js');
     
-    // For now, we'll just log it as created
-    console.log('Supabase bucket created successfully (placeholder)');
-    return { success: true };
+    // Validate environment variables
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Missing Supabase environment variables (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)');
+    }
+    
+    // Initialize Supabase client with service role key for admin operations
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+    
+    // Check if bucket already exists
+    const { data: existingBuckets, error: listError } = await supabase.storage.listBuckets();
+    if (listError) {
+      throw new Error(`Failed to list existing buckets: ${listError.message}`);
+    }
+    
+    const bucketExists = existingBuckets.some(bucket => bucket.name === bucketName);
+    if (bucketExists) {
+      console.log(`Supabase bucket ${bucketName} already exists`);
+      return { success: true, existed: true };
+    }
+    
+    // Create the bucket
+    const { data, error } = await supabase.storage.createBucket(bucketName, {
+      public: false, // Private bucket for backups
+      allowedMimeTypes: ['application/sql', 'application/gzip', 'application/x-gzip', 'application/octet-stream'],
+      fileSizeLimit: 1024 * 1024 * 1024 * 2 // 2GB limit for backup files
+    });
+    
+    if (error) {
+      throw new Error(`Failed to create Supabase bucket: ${error.message}`);
+    }
+    
+    console.log(`Supabase bucket created successfully: ${bucketName}`);
+    return { success: true, bucketName, bucketId: data?.name };
   } catch (error) {
     console.error('Error creating Supabase bucket:', error);
     return { success: false, error: error.message };
@@ -1036,6 +1075,7 @@ export async function deployNewCustomer(customerData) {
       data: {
         deployment_status: 'completed',
         deployment_url: envVars.NEXTAUTH_URL,
+        database_url: envVars.DATABASE_URL,
         admin_username: adminUserResult.adminEmail,
         admin_password: adminUserResult.adminPassword, // Store temporarily for display
         deployment_path: deploymentPath

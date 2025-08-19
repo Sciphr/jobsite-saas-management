@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useBackupHistory } from "../../hooks/useInstallations";
 import PersistentDeploymentProgress from "../../components/PersistentDeploymentProgress";
 import DeletionProgress from "../../components/DeletionProgress";
+import DarkModeToggle from "../../components/DarkModeToggle";
 
 function DeploymentConfig({ installation, onUpdate }) {
   const [configData, setConfigData] = useState({
@@ -611,6 +612,7 @@ export default function InstallationDetail({ params }) {
               >
                 Create Recovery Token
               </Link>
+              <DarkModeToggle />
             </div>
           </div>
         </div>

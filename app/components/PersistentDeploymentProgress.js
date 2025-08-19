@@ -115,6 +115,10 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
           // Check if deployment is complete
           if (data.step === steps.length - 1 && data.status === 'completed') {
             setIsComplete(true);
+            // Refresh the page to show admin credentials and updated deployment status
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
           }
 
           // Check if any step failed

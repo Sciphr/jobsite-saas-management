@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useInstallationDetail, useUpdateInstallation } from "../../../hooks/useInstallations";
+import DarkModeToggle from "../../../components/DarkModeToggle";
 
 export default function EditInstallation({ params }) {
   const router = useRouter();
@@ -110,19 +111,22 @@ export default function EditInstallation({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
             <div className="flex flex-col w-full">
               <Link href={`/installations/${installationId}`} className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Installation
               </Link>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
                 <span className="hidden sm:inline">Edit Installation: {installation?.company_name}</span>
                 <span className="sm:hidden">Edit: {installation?.company_name}</span>
               </h1>
+            </div>
+            <div className="flex items-center">
+              <DarkModeToggle />
             </div>
           </div>
         </div>
