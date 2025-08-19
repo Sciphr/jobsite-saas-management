@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBackupHistory } from "../../hooks/useInstallations";
 import DeploymentProgress from "../../components/DeploymentProgress";
+import DeletionProgress from "../../components/DeletionProgress";
 
 function DeploymentConfig({ installation, onUpdate }) {
   const [configData, setConfigData] = useState({
@@ -325,6 +326,13 @@ export default function InstallationDetail({ params }) {
   const [showBackupHistory, setShowBackupHistory] = useState(false);
   const [isRunningHealthCheck, setIsRunningHealthCheck] = useState(false);
   const [isRunningBackup, setIsRunningBackup] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeletionProgress, setShowDeletionProgress] = useState(false);
+  const [deleteConfirmations, setDeleteConfirmations] = useState({
+    understandDataLoss: false,
+    confirmDeletion: false
+  });
+  const [deletePreview, setDeletePreview] = useState(null);
   const router = useRouter();
 
   // React Query for backup history
@@ -476,6 +484,54 @@ export default function InstallationDetail({ params }) {
     window.open(`/api/backups/download?path=${encodeURIComponent(filePath)}`, '_blank');
   };
 
+  const handleShowDeleteConfirm = async () => {
+    try {
+      // Get deletion preview
+      const response = await fetch(`/api/installations/${installationId}/delete`);
+      if (response.ok) {
+        const data = await response.json();
+        setDeletePreview(data);
+        setShowDeleteConfirm(true);
+      } else {
+        const data = await response.json();
+        alert(`Failed to get deletion preview: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error getting deletion preview:', error);
+      alert('Error getting deletion preview');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmations.understandDataLoss || !deleteConfirmations.confirmDeletion) {
+      alert('Please confirm all checkboxes before proceeding');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/installations/${installationId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmations: deleteConfirmations })
+      });
+
+      if (response.ok) {
+        setShowDeleteConfirm(false);
+        setShowDeletionProgress(true);
+      } else {
+        const data = await response.json();
+        alert(`Failed to start deletion: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error starting deletion:', error);
+      alert('Error starting deletion');
+    }
+  };
+
+  const handleDeletionComplete = () => {
+    setShowDeletionProgress(false);
+    router.push('/'); // Redirect to dashboard
+  };
 
   if (loading) {
     return (
@@ -824,6 +880,42 @@ export default function InstallationDetail({ params }) {
                   </div>
                 </div>
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-white shadow rounded-lg mb-8 border-l-4 border-red-500">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-red-900 dark:text-red-100">Danger Zone</h2>
+          </div>
+          <div className="p-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Delete Installation</h3>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    Permanently delete this installation and all associated data. This action cannot be undone.
+                  </p>
+                  <div className="mt-4">
+                    <button
+                      onClick={handleShowDeleteConfirm}
+                      disabled={installation?.deployment_status === 'starting' || installation?.deployment_status === 'in_progress'}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Delete Installation
+                    </button>
+                    {installation?.deployment_status === 'starting' || installation?.deployment_status === 'in_progress' ? (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-2">Cannot delete while deployment is in progress</p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1270,6 +1362,111 @@ export default function InstallationDetail({ params }) {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-red-900 dark:text-red-100">Delete Installation</h3>
+            </div>
+            
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              <div className="mb-6">
+                <div className="flex items-center mb-4">
+                  <svg className="h-8 w-8 text-red-600 dark:text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      Delete {deletePreview?.installation?.company_name}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Subdomain: {deletePreview?.installation?.subdomain}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                  <h5 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                    The following will be permanently deleted:
+                  </h5>
+                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    {deletePreview?.cleanupItems?.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="space-y-4">
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteConfirmations.understandDataLoss}
+                      onChange={(e) => setDeleteConfirmations(prev => ({ 
+                        ...prev, 
+                        understandDataLoss: e.target.checked 
+                      }))}
+                      className="mt-1 mr-3 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      I understand that this will permanently delete all data associated with this installation, 
+                      including the customer database, files, and configuration. This action cannot be undone.
+                    </span>
+                  </label>
+                  
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deleteConfirmations.confirmDeletion}
+                      onChange={(e) => setDeleteConfirmations(prev => ({ 
+                        ...prev, 
+                        confirmDeletion: e.target.checked 
+                      }))}
+                      className="mt-1 mr-3 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      I confirm that I want to delete this installation and all associated resources.
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteConfirmations({ understandDataLoss: false, confirmDeletion: false });
+                  }}
+                  className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm font-medium rounded-md transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={!deleteConfirmations.understandDataLoss || !deleteConfirmations.confirmDeletion}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Delete Installation
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deletion Progress Modal */}
+      <DeletionProgress
+        installationId={installationId}
+        isOpen={showDeletionProgress}
+        onClose={() => setShowDeletionProgress(false)}
+        onComplete={handleDeletionComplete}
+      />
     </div>
   );
 }
