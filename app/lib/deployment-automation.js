@@ -323,26 +323,50 @@ export async function createEnvironmentFile(deploymentPath, envVars) {
 }
 
 /**
- * Create PostgreSQL database for the deployment
+ * Create PostgreSQL database from template for the deployment
  */
 export async function createDatabase(dbName, adminEmail, companyName) {
   try {
-    console.log(`Creating database: ${dbName}`);
+    console.log(`Creating database from template: ${dbName}`);
     
-    // Create database on Pi using SSH (Pi is Linux, so use Linux syntax)
+    // First, transfer the SQL template file to the Pi
+    console.log('Transferring database template to Pi...');
+    const fs = require('fs');
+    const templateSQL = fs.readFileSync('./asari_template.sql', 'utf8');
+    const base64Template = Buffer.from(templateSQL).toString('base64');
+    await runSSHCommand(`echo "${base64Template}" | base64 -d > /tmp/asari_template_${dbName}.sql`);
+    
+    // Create empty database
+    console.log('Creating empty database...');
     const createDbCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} createdb -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} ${dbName}`;
     await runSSHCommand(createDbCommand);
     
+    // Restore from template
+    console.log('Restoring database from template...');
+    const restoreCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -f /tmp/asari_template_${dbName}.sql`;
+    const restoreResult = await runSSHCommand(restoreCommand);
+    console.log('Template restoration output:', restoreResult.stdout);
+    
+    // Clean up template file
+    await runSSHCommand(`rm -f /tmp/asari_template_${dbName}.sql`);
+    
     // Test database connection
     console.log('Testing database connection...');
-    const testConnectionCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -l`;
+    const testConnectionCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -c "SELECT COUNT(*) FROM roles;" | head -3 | tail -1`;
     const connectionTest = await runSSHCommand(testConnectionCommand);
-    console.log('Database connection test successful - can connect to database');
+    console.log('Database connection test successful - roles table has', connectionTest.stdout.trim(), 'records');
     
-    console.log('Database created and verified successfully');
+    console.log('Database created from template successfully');
     return { success: true };
   } catch (error) {
-    console.error('Error creating database:', error);
+    console.error('Error creating database from template:', error);
+    
+    // Clean up template file on error
+    try {
+      await runSSHCommand(`rm -f /tmp/asari_template_${dbName}.sql`);
+    } catch (cleanupError) {
+      console.warn('Could not clean up template file:', cleanupError);
+    }
     
     // Extract more detailed error information
     let errorDetails = error.message;
@@ -790,204 +814,6 @@ createAdminUser();
   }
 }
 
-/**
- * Populate roles, permissions, and role_permissions tables
- */
-export async function populateRolesAndPermissions(deploymentPath) {
-  try {
-    console.log('Populating roles, permissions, and role_permissions tables...');
-    
-    // Read CSV files from the project root
-    const fs = require('fs');
-    const rolesCSV = fs.readFileSync('./roles.csv', 'utf8');
-    const permissionsCSV = fs.readFileSync('./permissions.csv', 'utf8');
-    const rolePermissionsCSV = fs.readFileSync('./role_permissions.csv', 'utf8');
-    
-    // Parse CSV data with proper handling of mixed quoting
-    const parseCSV = (csvContent) => {
-      const lines = csvContent.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
-      return lines.slice(1).map(line => {
-        const values = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let i = 0; i < line.length; i++) {
-          const char = line[i];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        values.push(current.trim());
-        
-        const obj = {};
-        headers.forEach((header, index) => {
-          let value = values[index]?.trim() || null;
-          // Remove quotes if present
-          if (value && value.startsWith('"') && value.endsWith('"')) {
-            value = value.slice(1, -1);
-          }
-          // Handle special values
-          if (value === 'NULL') {
-            value = null;
-          } else if (value === 'True') {
-            value = true;
-          } else if (value === 'False') {
-            value = false;
-          }
-          obj[header] = value;
-        });
-        return obj;
-      });
-    };
-    
-    const rolesData = parseCSV(rolesCSV);
-    const permissionsData = parseCSV(permissionsCSV);
-    const rolePermissionsData = parseCSV(rolePermissionsCSV);
-    
-    // Create the population script
-    const populateScript = `
-const { Client } = require('pg');
-const fs = require('fs');
-
-// Read DATABASE_URL from .env file manually (no dotenv dependency)
-const envContent = fs.readFileSync('.env', 'utf8');
-const lines = envContent.split('\\n');
-let dbUrl = null;
-
-for (const line of lines) {
-  if (line.startsWith('DATABASE_URL=')) {
-    dbUrl = line.split('=')[1].replace(/"/g, '');
-    break;
-  }
-}
-
-if (!dbUrl) {
-  throw new Error('DATABASE_URL not found in .env file');
-}
-
-const client = new Client({
-  connectionString: dbUrl,
-});
-
-async function populateTables() {
-  try {
-    await client.connect();
-    console.log('Connected to customer database for roles/permissions population');
-    
-    // 1. Create indexes for better performance
-    console.log('Creating indexes...');
-    await client.query(\`
-      CREATE INDEX IF NOT EXISTS idx_roles_name ON roles(name);
-      CREATE INDEX IF NOT EXISTS idx_roles_is_active ON roles(is_active);
-      CREATE INDEX IF NOT EXISTS idx_permissions_resource_action ON permissions(resource, action);
-      CREATE INDEX IF NOT EXISTS idx_permissions_category ON permissions(category);
-      CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);
-      CREATE INDEX IF NOT EXISTS idx_role_permissions_permission_id ON role_permissions(permission_id);
-      CREATE INDEX IF NOT EXISTS idx_role_permissions_granted_at ON role_permissions(granted_at);
-    \`);
-    
-    // 2. Populate roles table
-    console.log('Populating roles table...');
-    const rolesData = ${JSON.stringify(rolesData)};
-    
-    for (const role of rolesData) {
-      await client.query(\`
-        INSERT INTO roles (id, name, description, color, is_system_role, is_active, created_at, updated_at, created_by, is_ldap_role, ldap_group_name, is_editable)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), $7, $8, $9, $10)
-        ON CONFLICT (id) DO NOTHING
-      \`, [
-        role.id,
-        role.name,
-        role.description,
-        role.color,
-        role.is_system_role,
-        role.is_active,
-        role.created_by,
-        role.is_ldap_role,
-        role.ldap_group_name,
-        role.is_editable
-      ]);
-    }
-    console.log(\`Inserted \${rolesData.length} roles\`);
-    
-    // 3. Populate permissions table
-    console.log('Populating permissions table...');
-    const permissionsData = ${JSON.stringify(permissionsData)};
-    
-    for (const permission of permissionsData) {
-      await client.query(\`
-        INSERT INTO permissions (id, resource, action, description, category, is_system_permission, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        ON CONFLICT (id) DO NOTHING
-      \`, [
-        permission.id,
-        permission.resource,
-        permission.action,
-        permission.description,
-        permission.category,
-        permission.is_system_permission
-      ]);
-    }
-    console.log(\`Inserted \${permissionsData.length} permissions\`);
-    
-    // 4. Populate role_permissions table
-    console.log('Populating role_permissions table...');
-    const rolePermissionsData = ${JSON.stringify(rolePermissionsData)};
-    
-    for (const rp of rolePermissionsData) {
-      // For initial deployment, set granted_by to NULL to avoid foreign key issues
-      // since the referenced users don't exist in a fresh deployment
-      await client.query(\`
-        INSERT INTO role_permissions (id, role_id, permission_id, granted_at, granted_by)
-        VALUES ($1, $2, $3, NOW(), $4)
-        ON CONFLICT (id) DO NOTHING
-      \`, [
-        rp.id,
-        rp.role_id,
-        rp.permission_id,
-        null  // Always set to null for fresh deployments
-      ]);
-    }
-    console.log(\`Inserted \${rolePermissionsData.length} role-permission mappings\`);
-    
-    console.log('✅ Successfully populated all roles, permissions, and role_permissions tables');
-  } catch (error) {
-    console.error('❌ Error populating roles/permissions:', error);
-    process.exit(1);
-  } finally {
-    await client.end();
-  }
-}
-
-populateTables();
-`;
-    
-    // Write the script to the deployment directory
-    const base64Script = Buffer.from(populateScript).toString('base64');
-    await runSSHCommand(`cd "${deploymentPath}" && echo "${base64Script}" | base64 -d > populate_roles_permissions.js`);
-    
-    // Execute the script
-    console.log('Executing roles and permissions population script...');
-    const scriptResult = await runSSHCommand(`cd "${deploymentPath}" && node populate_roles_permissions.js`);
-    console.log('Roles/permissions population script output:', scriptResult.stdout);
-    console.log('Roles/permissions population script stderr:', scriptResult.stderr);
-    
-    // Clean up the script file
-    await runSSHCommand(`cd "${deploymentPath}" && rm populate_roles_permissions.js`);
-    
-    console.log('✅ Roles, permissions, and role_permissions populated successfully');
-    return { success: true };
-  } catch (error) {
-    console.error('Error populating roles and permissions:', error);
-    return { success: false, error: error.message };
-  }
-}
 
 /**
  * Emit progress update via WebSocket
@@ -1027,7 +853,6 @@ export async function deployNewCustomer(customerData) {
     'Building application',
     'Running database migrations',
     'Creating admin user',
-    'Populating roles and permissions',
     'Creating PM2 configuration',
     'Starting PM2 process',
     'Configuring nginx',
@@ -1144,42 +969,36 @@ export async function deployNewCustomer(customerData) {
     if (!adminUserResult.success) throw new Error(`Admin user creation failed: ${adminUserResult.error}`);
     emitProgress(customerData.installationId, 9, 'completed', `Admin user created: ${adminUserResult.adminEmail}`);
     
-    // Step 10: Populate roles and permissions
-    emitProgress(customerData.installationId, 10, 'in_progress', 'Populating roles and permissions...');
-    const rolesPermissionsResult = await populateRolesAndPermissions(deploymentPath);
-    if (!rolesPermissionsResult.success) throw new Error(`Roles/permissions population failed: ${rolesPermissionsResult.error}`);
-    emitProgress(customerData.installationId, 10, 'completed', 'Roles and permissions populated successfully');
-    
-    // Step 11: Create PM2 configuration
-    emitProgress(customerData.installationId, 11, 'in_progress', 'Creating PM2 configuration...');
+    // Step 10: Create PM2 configuration
+    emitProgress(customerData.installationId, 10, 'in_progress', 'Creating PM2 configuration...');
     const pm2ConfigResult = await createPM2Config(deploymentPath, envVars);
     if (!pm2ConfigResult.success) throw new Error(`PM2 config failed: ${pm2ConfigResult.error}`);
-    emitProgress(customerData.installationId, 11, 'completed', 'PM2 configuration created');
+    emitProgress(customerData.installationId, 10, 'completed', 'PM2 configuration created');
     
-    // Step 12: Start PM2 process
-    emitProgress(customerData.installationId, 12, 'in_progress', 'Starting PM2 process...');
+    // Step 11: Start PM2 process
+    emitProgress(customerData.installationId, 11, 'in_progress', 'Starting PM2 process...');
     const pm2StartResult = await startPM2Process(deploymentPath);
     if (!pm2StartResult.success) throw new Error(`PM2 start failed: ${pm2StartResult.error}`);
-    emitProgress(customerData.installationId, 12, 'completed', 'PM2 process started');
+    emitProgress(customerData.installationId, 11, 'completed', 'PM2 process started');
     
-    // Step 13: Configure nginx virtual host
-    emitProgress(customerData.installationId, 13, 'in_progress', 'Configuring nginx...');
+    // Step 12: Configure nginx virtual host
+    emitProgress(customerData.installationId, 12, 'in_progress', 'Configuring nginx...');
     const nginxResult = await configureNginx(customerData.subdomain, envVars.PORT);
     if (!nginxResult.success) {
       console.warn(`Nginx configuration failed: ${nginxResult.error}. You'll need to configure manually.`);
-      emitProgress(customerData.installationId, 13, 'failed', 'Nginx configuration failed (manual setup required)');
+      emitProgress(customerData.installationId, 12, 'failed', 'Nginx configuration failed (manual setup required)');
     } else {
-      emitProgress(customerData.installationId, 13, 'completed', 'Nginx configured successfully');
+      emitProgress(customerData.installationId, 12, 'completed', 'Nginx configured successfully');
     }
     
-    // Step 14: Setup SSL certificate
-    emitProgress(customerData.installationId, 14, 'in_progress', 'Setting up SSL certificate...');
+    // Step 13: Setup SSL certificate
+    emitProgress(customerData.installationId, 13, 'in_progress', 'Setting up SSL certificate...');
     const sslResult = await setupSSLCertificate(customerData.subdomain);
     if (!sslResult.success) {
       console.warn(`SSL certificate setup failed: ${sslResult.error}. You'll need to set this up manually.`);
-      emitProgress(customerData.installationId, 14, 'failed', 'SSL setup failed (manual setup required)');
+      emitProgress(customerData.installationId, 13, 'failed', 'SSL setup failed (manual setup required)');
     } else {
-      emitProgress(customerData.installationId, 14, 'completed', 'SSL certificate configured');
+      emitProgress(customerData.installationId, 13, 'completed', 'SSL certificate configured');
     }
     
     // Update deployment status

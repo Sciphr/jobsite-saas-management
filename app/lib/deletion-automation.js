@@ -224,9 +224,10 @@ export async function dropCustomerDatabase(subdomain) {
     }
     
     // Terminate all connections to the database first
-    // Use a simpler approach by writing the SQL to a temp file to avoid quoting issues
-    const terminateSQL = `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';`;
-    await runSSHCommand(`echo "${terminateSQL}" > /tmp/terminate_${dbName}.sql`);
+    // Use cat with heredoc to avoid all quoting issues
+    await runSSHCommand(`cat > /tmp/terminate_${dbName}.sql << 'EOF'
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';
+EOF`);
     await runSSHCommand(`PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -f /tmp/terminate_${dbName}.sql`);
     await runSSHCommand(`rm -f /tmp/terminate_${dbName}.sql`);
     
