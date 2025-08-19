@@ -810,25 +810,6 @@ function emitProgress(installationId, step, status, message) {
 }
 
 /**
- * Emit progress update via WebSocket
- */
-function emitProgress(installationId, step, status, message) {
-  try {
-    if (global.io) {
-      global.io.emit('deployment-progress', {
-        installationId,
-        step,
-        status, // 'pending', 'in_progress', 'completed', 'failed'
-        message,
-        timestamp: new Date().toISOString()
-      });
-    }
-  } catch (error) {
-    console.error('Error emitting progress:', error);
-  }
-}
-
-/**
  * Complete deployment automation process
  */
 export async function deployNewCustomer(customerData) {
