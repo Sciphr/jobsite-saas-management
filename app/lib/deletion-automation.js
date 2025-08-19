@@ -224,7 +224,7 @@ export async function dropCustomerDatabase(subdomain) {
     }
     
     // Terminate all connections to the database first
-    const terminateConnectionsCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';"`;
+    const terminateConnectionsCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -c 'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \\'${dbName}\\';'`;
     await runSSHCommand(terminateConnectionsCommand);
     
     // Drop the database

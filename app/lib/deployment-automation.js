@@ -895,9 +895,9 @@ async function populateTables() {
         role.color,
         role.is_system_role === 'True',
         role.is_active === 'True',
-        role.created_by,
+        role.created_by === 'NULL' ? null : role.created_by,
         role.is_ldap_role === 'True',
-        role.ldap_group_name,
+        role.ldap_group_name === 'NULL' ? null : role.ldap_group_name,
         role.is_editable === 'True'
       ]);
     }
@@ -936,7 +936,7 @@ async function populateTables() {
         rp.id,
         rp.role_id,
         rp.permission_id,
-        rp.granted_by
+        rp.granted_by === 'NULL' ? null : rp.granted_by
       ]);
     }
     console.log(\`Inserted \${rolePermissionsData.length} role-permission mappings\`);
