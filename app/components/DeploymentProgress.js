@@ -30,11 +30,14 @@ export default function DeploymentProgress({ installationId, isOpen, onClose }) 
   useEffect(() => {
     if (isOpen && installationId) {
       // Initialize WebSocket connection - use current host for production compatibility
+      // In production, use the same domain but with /socket.io path (no separate port needed)
       const socketUrl = process.env.NODE_ENV === 'production' 
-        ? `${window.location.protocol}//${window.location.hostname}:3101`
+        ? `${window.location.protocol}//${window.location.host}`
         : 'http://localhost:3101';
       console.log('Attempting to connect to WebSocket:', socketUrl);
-      const newSocket = io(socketUrl);
+      const newSocket = io(socketUrl, {
+        path: '/socket.io/'
+      });
       
       newSocket.on('connect', () => {
         console.log('WebSocket connected successfully');

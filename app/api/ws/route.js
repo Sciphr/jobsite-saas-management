@@ -1,40 +1,25 @@
-import { Server } from 'socket.io';
-
-let io;
+// WebSocket server is now integrated with the main Next.js server
+// No separate initialization needed
 
 export async function GET(request) {
-  if (!global.io) {
-    // Initialize Socket.IO server
-    const { createServer } = require('http');
-    const { Server } = require('socket.io');
-    
-    const httpServer = createServer();
-    global.io = new Server(httpServer, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      }
+  // Check if WebSocket server is available
+  if (global.io) {
+    return new Response(JSON.stringify({ 
+      message: 'WebSocket server is ready',
+      connected: global.io.engine.clientsCount || 0
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
-
-    global.io.on('connection', (socket) => {
-      console.log('Client connected:', socket.id);
-      
-      socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-      });
-    });
-
-    // Start the WebSocket server on a different port, bind to all interfaces for production
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
-    httpServer.listen(3101, host, () => {
-      console.log(`WebSocket server listening on ${host}:3101`);
+  } else {
+    return new Response(JSON.stringify({ 
+      message: 'WebSocket server not initialized',
+      error: 'Server starting up, please try again'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
-
-  return new Response(JSON.stringify({ message: 'WebSocket server initialized' }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
 }
 
 // Export the io instance for use in other files

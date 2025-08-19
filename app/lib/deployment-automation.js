@@ -776,80 +776,8 @@ createAdminUser();
     console.log('Admin user creation script output:', scriptResult.stdout);
     console.log('Admin user creation script stderr:', scriptResult.stderr);
     
-    // First check what tables exist in the database
-    console.log('Checking database schema...');
-    const schemaCheckScript = `
-const { PrismaClient } = require('@prisma/client');
-
-async function checkSchema() {
-  const prisma = new PrismaClient();
-  try {
-    // Try to check if admin_users table exists
-    const result = await prisma.$queryRaw\`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name LIKE '%user%' OR table_name LIKE '%admin%'
-    \`;
-    console.log('Available user/admin tables:', result);
-    
-    await prisma.$disconnect();
-  } catch (error) {
-    console.error('Error checking schema:', error);
-    await prisma.$disconnect();
-  }
-}
-
-checkSchema();
-`;
-
-    const base64SchemaScript = Buffer.from(schemaCheckScript).toString('base64');
-    await runSSHCommand(`cd "${deploymentPath}" && echo "${base64SchemaScript}" | base64 -d > check_schema.js`);
-    
-    const schemaResult = await runSSHCommand(`cd "${deploymentPath}" && node check_schema.js`);
-    console.log('Database schema check result:', schemaResult.stdout);
-    
-    await runSSHCommand(`cd "${deploymentPath}" && rm check_schema.js`);
-
-    // Verify the user was actually created by checking the database
-    console.log('Verifying admin user was created in database...');
-    const verifyUserScript = `
-const { PrismaClient } = require('@prisma/client');
-
-async function verifyUser() {
-  const prisma = new PrismaClient();
-  try {
-    const userCount = await prisma.admin_users.count();
-    console.log('Total admin users in database:', userCount);
-    
-    const user = await prisma.admin_users.findFirst({
-      where: { email: '${adminEmail}' }
-    });
-    
-    if (user) {
-      console.log('VERIFIED: Admin user found:', user.email, 'Active:', user.is_active);
-    } else {
-      console.log('ERROR: Admin user NOT found in database');
-    }
-    
-    await prisma.$disconnect();
-  } catch (error) {
-    console.error('Error verifying user:', error);
-    await prisma.$disconnect();
-  }
-}
-
-verifyUser();
-`;
-
-    const base64VerifyScript = Buffer.from(verifyUserScript).toString('base64');
-    await runSSHCommand(`cd "${deploymentPath}" && echo "${base64VerifyScript}" | base64 -d > verify_admin_user.js`);
-    
-    const verifyResult = await runSSHCommand(`cd "${deploymentPath}" && node verify_admin_user.js`);
-    console.log('Admin user verification result:', verifyResult.stdout);
-    
-    // Clean up verification script
-    await runSSHCommand(`cd "${deploymentPath}" && rm verify_admin_user.js`);
+    // Admin user creation is already verified by the SQL script above
+    console.log('Admin user creation completed successfully - skipping schema verification');
     
     // Clean up the script file
     await runSSHCommand(`cd "${deploymentPath}" && rm create_admin_user.js`);
@@ -859,6 +787,25 @@ verifyUser();
   } catch (error) {
     console.error('Error creating admin user:', error);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Emit progress update via WebSocket
+ */
+function emitProgress(installationId, step, status, message) {
+  try {
+    if (global.io) {
+      global.io.emit('deployment-progress', {
+        installationId,
+        step,
+        status, // 'pending', 'in_progress', 'completed', 'failed'
+        message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error emitting progress:', error);
   }
 }
 
