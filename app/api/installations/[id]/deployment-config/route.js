@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const configData = await request.json();
 
     // Validate required fields
@@ -59,7 +59,7 @@ export async function POST(request, { params }) {
       data: {
         subdomain: configData.subdomain,
         port_number: parseInt(configData.port_number),
-        domain: configData.custom_domain || `${configData.subdomain}.yourdomain.com`,
+        domain: configData.custom_domain || `${configData.subdomain}.asari.sciphr.ca`,
         updated_at: new Date()
       }
     });

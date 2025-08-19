@@ -91,17 +91,46 @@ export async function POST(request) {
         }, { status: 400 });
       }
 
-      // Get next available port
-      const availablePort = await managementPrisma.saas_port_assignments.findFirst({
-        where: { is_available: true },
-        orderBy: { port_number: 'asc' }
-      });
+      // Get the port number from the request body or find next available port
+      let portNumber = body.port_number;
+      let availablePort = null;
+      
+      if (portNumber) {
+        // Check if specific port is available
+        availablePort = await managementPrisma.saas_port_assignments.findFirst({
+          where: { 
+            port_number: portNumber,
+            is_available: true 
+          }
+        });
+        
+        if (!availablePort) {
+          return NextResponse.json({ 
+            success: false, 
+            error: `Port ${portNumber} is not available` 
+          }, { status: 400 });
+        }
+      } else {
+        // Get next available port in range 7000-7999
+        availablePort = await managementPrisma.saas_port_assignments.findFirst({
+          where: { 
+            is_available: true,
+            port_number: {
+              gte: 7000,
+              lte: 7999
+            }
+          },
+          orderBy: { port_number: 'asc' }
+        });
 
-      if (!availablePort) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No available ports for deployment' 
-        }, { status: 500 });
+        if (!availablePort) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'No available ports in range 7000-7999 for deployment' 
+          }, { status: 500 });
+        }
+        
+        portNumber = availablePort.port_number;
       }
 
       // Reserve the port
@@ -127,7 +156,7 @@ export async function POST(request) {
         adminEmail: admin_email,
         subdomain: subdomain || companySlug,
         billingPlan: billing_plan,
-        portOffset: availablePort.port_number - 3001
+        port_number: portNumber
       };
 
       // Update installation status
@@ -136,7 +165,8 @@ export async function POST(request) {
         data: {
           deployment_status: 'starting',
           subdomain: customerData.subdomain,
-          port_number: availablePort.port_number
+          port_number: portNumber,
+          domain: `${customerData.subdomain}.asari.sciphr.ca`
         }
       });
 
@@ -149,7 +179,7 @@ export async function POST(request) {
             data: {
               deployment_status: 'completed',
               deployment_url: result.url,
-              deployment_path: `/home/deployments/${companySlug}`
+              deployment_path: `/asari_installations/${customerData.subdomain}`
             }
           });
           console.log(`Deployment completed for ${company_name}: ${result.url}`);
@@ -200,7 +230,7 @@ export async function POST(request) {
         success: true, 
         message: 'Deployment started successfully',
         estimatedTime: '5-10 minutes',
-        port: availablePort.port_number,
+        port: portNumber,
         subdomain: customerData.subdomain
       });
     }

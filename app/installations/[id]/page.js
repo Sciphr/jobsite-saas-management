@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBackupHistory } from "../../hooks/useInstallations";
+import DeploymentProgress from "../../components/DeploymentProgress";
 
 function DeploymentConfig({ installation, onUpdate }) {
   const [configData, setConfigData] = useState({
@@ -16,9 +17,13 @@ function DeploymentConfig({ installation, onUpdate }) {
   const [usedPorts, setUsedPorts] = useState([]);
   const [usedDomains, setUsedDomains] = useState([]);
   const [conflicts, setConflicts] = useState({});
+  const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     fetchConflictData();
+  }, []);
+
+  useEffect(() => {
     generateDefaults();
   }, [installation]);
 
@@ -36,16 +41,31 @@ function DeploymentConfig({ installation, onUpdate }) {
   };
 
   const generateDefaults = () => {
+    if (!installation) return;
+    
+    // If installation already has saved configuration, use it
+    if (installation.subdomain && installation.port_number) {
+      setConfigData({
+        subdomain: installation.subdomain,
+        port_number: installation.port_number.toString(),
+        custom_domain: installation.domain && installation.domain !== `${installation.subdomain}.asari.sciphr.ca` ? installation.domain : '',
+        environment_vars: {}
+      });
+      return;
+    }
+    
+    // Otherwise generate defaults for new configurations
     const subdomain = installation.company_name?.toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || '';
     
-    setConfigData(prev => ({
-      ...prev,
+    setConfigData({
       subdomain,
-      port_number: ''
-    }));
+      port_number: '',
+      custom_domain: '',
+      environment_vars: {}
+    });
   };
 
   const checkConflicts = (field, value) => {
@@ -72,10 +92,14 @@ function DeploymentConfig({ installation, onUpdate }) {
   };
 
   const suggestPort = () => {
-    const basePort = 3001;
+    const basePort = 7000;
     let suggestedPort = basePort;
-    while (usedPorts.includes(suggestedPort)) {
+    while (usedPorts.includes(suggestedPort) && suggestedPort <= 7999) {
       suggestedPort++;
+    }
+    if (suggestedPort > 7999) {
+      alert('No available ports in range 7000-7999');
+      return;
     }
     handleInputChange('port_number', suggestedPort.toString());
   };
@@ -122,7 +146,12 @@ function DeploymentConfig({ installation, onUpdate }) {
 
     if (confirm(`Deploy ${installation.company_name} with the current configuration?`)) {
       setLoading(true);
+      setShowProgress(true);
+      
       try {
+        // Initialize WebSocket connection first
+        const wsResponse = await fetch('/api/ws');
+        
         const response = await fetch('/api/deployments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -140,16 +169,19 @@ function DeploymentConfig({ installation, onUpdate }) {
         const data = await response.json();
         
         if (data.success) {
-          alert(`Deployment started! Estimated time: ${data.estimatedTime}`);
-          onUpdate(); // Refresh to show deployment status
+          // Don't show alert anymore - progress modal will handle the UI
+          console.log(`Deployment started! Estimated time: ${data.estimatedTime}`);
         } else {
           alert(`Deployment failed: ${data.error}`);
+          setShowProgress(false);
         }
       } catch (error) {
         console.error('Error starting deployment:', error);
         alert('Error starting deployment');
+        setShowProgress(false);
       } finally {
-        setLoading(false);
+        // Don't set loading false here - let the progress modal handle it
+        // setLoading(false);
       }
     }
   };
@@ -182,14 +214,14 @@ function DeploymentConfig({ installation, onUpdate }) {
               }`}
             />
             <span className="px-3 py-2 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
-              .yourdomain.com
+              .asari.sciphr.ca
             </span>
           </div>
           {conflicts.subdomain && (
             <p className="text-sm text-red-600 mt-1">{conflicts.subdomain}</p>
           )}
           <p className="text-sm text-gray-500 mt-1">
-            Will be: https://{configData.subdomain || 'subdomain'}.yourdomain.com
+            Will be: https://{configData.subdomain || 'subdomain'}.asari.sciphr.ca
           </p>
         </div>
 
@@ -202,11 +234,11 @@ function DeploymentConfig({ installation, onUpdate }) {
             <input
               type="number"
               required
-              min="3000"
-              max="9999"
+              min="7000"
+              max="7999"
               value={configData.port_number}
               onChange={(e) => handleInputChange('port_number', e.target.value)}
-              placeholder="3001"
+              placeholder="7001"
               className={`flex-1 px-3 py-2.5 sm:py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm ${
                 conflicts.port_number ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -267,6 +299,17 @@ function DeploymentConfig({ installation, onUpdate }) {
           ) : 'Deploy Customer'}
         </button>
       </div>
+      
+      {/* Deployment Progress Modal */}
+      <DeploymentProgress 
+        installationId={installation.id}
+        isOpen={showProgress}
+        onClose={() => {
+          setShowProgress(false);
+          setLoading(false);
+          onUpdate(); // Refresh installation data
+        }}
+      />
     </div>
   );
 }
@@ -553,12 +596,12 @@ export default function InstallationDetail({ params }) {
                 <dd className="flex items-center">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     installation?.health_status === 'healthy' 
-                      ? 'bg-green-100 text-green-800' 
+                      ? 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200' 
                       : installation?.health_status === 'degraded'
-                      ? 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
                       : installation?.health_status === 'unhealthy' || installation?.health_status === 'error'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`}>
                     {installation?.health_status || 'unknown'}
                   </span>
@@ -574,12 +617,12 @@ export default function InstallationDetail({ params }) {
                 <dd className="flex items-center">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     installation?.backup_status === 'completed' 
-                      ? 'bg-green-100 text-green-800' 
+                      ? 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200' 
                       : installation?.backup_status === 'running'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
                       : installation?.backup_status === 'failed'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`}>
                     {installation?.backup_status || 'pending'}
                   </span>
@@ -662,6 +705,31 @@ export default function InstallationDetail({ params }) {
                   </div>
                 )}
               </div>
+              
+              {/* Admin Credentials - Only show when deployment is completed and credentials exist */}
+              {installation.deployment_status === 'completed' && installation.admin_username && installation.admin_password && (
+                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-3">Admin Login Credentials</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <dt className="text-sm font-medium text-green-700 dark:text-green-300">Email</dt>
+                      <dd className="text-sm text-green-900 dark:text-green-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border">
+                        {installation.admin_username}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-green-700 dark:text-green-300">Password</dt>
+                      <dd className="text-sm text-green-900 dark:text-green-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border">
+                        {installation.admin_password}
+                      </dd>
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    Use these credentials to log into your newly deployed application. Store them securely and change the password after first login.
+                  </p>
+                </div>
+              )}
+              
               {installation.deployment_status === 'completed' && (
                 <div className="mt-4">
                   <Link

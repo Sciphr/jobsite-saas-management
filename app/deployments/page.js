@@ -130,33 +130,33 @@ function DeploymentContent() {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200';
       case 'starting':
       case 'cloning':
       case 'installing':
       case 'building':
       case 'configuring':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
     }
   };
 
   const selectedInstallation = installations.find(inst => inst.id === formData.installation_id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
             <div className="flex flex-col w-full">
               <Link href="/" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Deployment Automation</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">Deployment Automation</h1>
             </div>
           </div>
         </div>
@@ -164,15 +164,15 @@ function DeploymentContent() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Deploy New Customer */}
-        <div className="bg-white shadow rounded-lg mb-6 sm:mb-8">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900">Deploy New Customer</h2>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 sm:mb-8">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Deploy New Customer</h2>
           </div>
           <div className="p-4 sm:p-6">
             <form onSubmit={handleDeploy} className="space-y-4 sm:space-y-6">
               {/* Installation Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Customer Installation *
                 </label>
                 <select
@@ -181,7 +181,7 @@ function DeploymentContent() {
                   onChange={(e) => {
                     setFormData(prev => ({ ...prev, installation_id: e.target.value }));
                   }}
-                  className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                  className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select an installation...</option>
                   {installations
@@ -202,20 +202,20 @@ function DeploymentContent() {
               {/* Configuration Status */}
               {selectedInstallation && (
                 <div className="sm:col-span-2">
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 sm:p-4">
-                    <h4 className="text-sm font-medium text-gray-800 mb-2">Deployment Configuration</h4>
+                  <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-3 sm:p-4">
+                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Deployment Configuration</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Subdomain:</span>
-                        <div className="font-medium">{selectedInstallation.subdomain || 'Not configured'}</div>
+                        <span className="text-gray-500 dark:text-gray-400">Subdomain:</span>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{selectedInstallation.subdomain || 'Not configured'}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Port:</span>
-                        <div className="font-medium">{selectedInstallation.port_number || 'Not configured'}</div>
+                        <span className="text-gray-500 dark:text-gray-400">Port:</span>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{selectedInstallation.port_number || 'Not configured'}</div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Domain:</span>
-                        <div className="font-medium">{selectedInstallation.domain || 'Not configured'}</div>
+                        <span className="text-gray-500 dark:text-gray-400">Domain:</span>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{selectedInstallation.domain || 'Not configured'}</div>
                       </div>
                     </div>
                     {(!selectedInstallation.subdomain || !selectedInstallation.port_number) && (
@@ -235,9 +235,9 @@ function DeploymentContent() {
 
               {/* Deployment Info */}
               {selectedInstallation && selectedInstallation.subdomain && selectedInstallation.port_number && (
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 sm:p-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Deployment Details</h4>
-                  <div className="text-xs sm:text-sm text-blue-700 space-y-1">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 sm:p-4">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Deployment Details</h4>
+                  <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 space-y-1">
                     <p><strong>Company:</strong> {selectedInstallation.company_name}</p>
                     <p><strong>Admin Email:</strong> {selectedInstallation.admin_email}</p>
                     <p><strong>Will deploy to:</strong> {selectedInstallation.domain}</p>
@@ -267,9 +267,9 @@ function DeploymentContent() {
         </div>
 
         {/* Deployment History */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900">Deployment History</h2>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Deployment History</h2>
           </div>
           
           {loading ? (
@@ -279,27 +279,27 @@ function DeploymentContent() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Customer
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       URL
                     </th>
-                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Started
                     </th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {deployments.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="px-3 sm:px-6 py-8 sm:py-12 text-center text-gray-500 text-sm">
@@ -308,12 +308,12 @@ function DeploymentContent() {
                     </tr>
                   ) : (
                     deployments.map((deployment) => (
-                      <tr key={deployment.id} className="hover:bg-gray-50">
+                      <tr key={deployment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                             {deployment.installation?.company_name}
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {deployment.installation?.admin_email}
                           </div>
                         </td>
@@ -333,10 +333,10 @@ function DeploymentContent() {
                               {deployment.deployment_url}
                             </a>
                           ) : (
-                            <span className="text-gray-500 text-sm">Not available</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm">Not available</span>
                           )}
                         </td>
-                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {new Date(deployment.started_at).toLocaleString()}
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm font-medium">

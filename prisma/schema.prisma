@@ -36,6 +36,8 @@ model saas_installations {
   port_number           Int?
   subdomain             String?                     @db.VarChar(100)
   admin_name            String?                     @db.VarChar(255)
+  admin_username        String?
+  admin_password        String?
   saas_backup_logs      saas_backup_logs[]
   saas_deployments      saas_deployments[]
   saas_health_checks    saas_health_checks[]

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(npx prisma:*)"
     ],
     "defaultMode": "acceptEdits"
   }

@@ -8,27 +8,27 @@ import DarkModeToggle from "../../components/DarkModeToggle";
 export default function CreateInstallation() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    companyName: '',
-    adminName: '',
-    adminEmail: '',
-    billingEmail: '',
+    companyName: "",
+    adminName: "",
+    adminEmail: "",
+    billingEmail: "",
     useSameEmail: true,
-    billingPlan: 'Pro',
-    notes: ''
+    billingPlan: "Pro",
+    notes: "",
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('/api/installations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+      const response = await fetch("/api/installations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -37,20 +37,20 @@ export default function CreateInstallation() {
         // Redirect to the new installation's detail page
         router.push(`/installations/${data.installation.id}`);
       } else {
-        setError(data.error || 'Failed to create installation');
+        setError(data.error || "Failed to create installation");
       }
     } catch (error) {
-      console.error('Error creating installation:', error);
-      setError('Failed to create installation');
+      console.error("Error creating installation:", error);
+      setError("Failed to create installation");
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -61,10 +61,15 @@ export default function CreateInstallation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center w-full">
-              <Link href="/" className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-0 sm:mr-4 cursor-pointer">
+              <Link
+                href="/"
+                className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-0 sm:mr-4 cursor-pointer"
+              >
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex-1">Add New Customer</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex-1">
+                Add New Customer
+              </h1>
               <DarkModeToggle />
             </div>
           </div>
@@ -89,7 +94,9 @@ export default function CreateInstallation() {
                 type="text"
                 required
                 value={formData.companyName}
-                onChange={(e) => handleInputChange('companyName', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("companyName", e.target.value)
+                }
                 placeholder="e.g., Acme Corporation"
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
@@ -104,7 +111,7 @@ export default function CreateInstallation() {
                 type="text"
                 required
                 value={formData.adminName}
-                onChange={(e) => handleInputChange('adminName', e.target.value)}
+                onChange={(e) => handleInputChange("adminName", e.target.value)}
                 placeholder="e.g., John Smith"
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
@@ -120,9 +127,9 @@ export default function CreateInstallation() {
                 required
                 value={formData.adminEmail}
                 onChange={(e) => {
-                  handleInputChange('adminEmail', e.target.value);
+                  handleInputChange("adminEmail", e.target.value);
                   if (formData.useSameEmail) {
-                    handleInputChange('billingEmail', e.target.value);
+                    handleInputChange("billingEmail", e.target.value);
                   }
                 }}
                 placeholder="e.g., admin@acme.com"
@@ -144,26 +151,32 @@ export default function CreateInstallation() {
                     type="checkbox"
                     checked={formData.useSameEmail}
                     onChange={(e) => {
-                      handleInputChange('useSameEmail', e.target.checked);
+                      handleInputChange("useSameEmail", e.target.checked);
                       if (e.target.checked) {
-                        handleInputChange('billingEmail', formData.adminEmail);
+                        handleInputChange("billingEmail", formData.adminEmail);
                       }
                     }}
                     className="mr-2 rounded border-gray-300 focus:ring-indigo-500"
                   />
-                  <span className="text-sm text-gray-700">Use same as admin email</span>
+                  <span className="text-sm text-gray-700">
+                    Use same as admin email
+                  </span>
                 </div>
                 {!formData.useSameEmail && (
                   <input
                     type="email"
                     value={formData.billingEmail}
-                    onChange={(e) => handleInputChange('billingEmail', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("billingEmail", e.target.value)
+                    }
                     placeholder="e.g., billing@acme.com"
                     className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
                   />
                 )}
                 {formData.useSameEmail && (
-                  <div className="text-sm text-gray-500 italic">{formData.adminEmail || 'Will use admin email'}</div>
+                  <div className="text-sm text-gray-500 italic">
+                    {formData.adminEmail || "Will use admin email"}
+                  </div>
                 )}
               </div>
             </div>
@@ -175,8 +188,10 @@ export default function CreateInstallation() {
               </label>
               <select
                 value={formData.billingPlan}
-                onChange={(e) => handleInputChange('billingPlan', e.target.value)}
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                onChange={(e) =>
+                  handleInputChange("billingPlan", e.target.value)
+                }
+                className="w-full px-3 py-2.5 sm:py-2 border dark:bg-gray-800 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="Pro">Pro</option>
                 <option value="Enterprise">Enterprise</option>
@@ -191,7 +206,7 @@ export default function CreateInstallation() {
               </label>
               <textarea
                 value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
                 rows={4}
                 placeholder="Any additional notes about this installation..."
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
@@ -215,7 +230,9 @@ export default function CreateInstallation() {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Creating...
                   </div>
-                ) : 'Create Customer'}
+                ) : (
+                  "Create Customer"
+                )}
               </button>
             </div>
           </form>
