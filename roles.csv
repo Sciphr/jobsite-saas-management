@@ -1,9 +1,5 @@
 "id","name","description","color","is_system_role","is_active","created_at","updated_at","created_by","is_ldap_role","ldap_group_name","is_editable"
 "26da9755-59bc-43d5-93c0-6d8a96878f09","Super Admin","Full system access and control","yellow",True,True,"2025-07-30 06:33:01.169622+01","2025-07-30 06:33:01.169622+01",NULL,False,NULL,True
-"42605c1b-de55-43da-8cf4-8c17d336f90e","saml-users","Auto-created from SAML group: saml-users","#10b981",False,True,"2025-08-13 17:23:48.252+01","2025-08-13 17:23:48.252+01",NULL,False,NULL,True
 "583bd455-db37-43e5-a626-a4305144e7b4","Admin","System administrator with access to most things","blue",True,True,"2025-07-30 06:33:01.169622+01","2025-07-30 06:33:01.169622+01",NULL,False,NULL,True
 "7ca82e25-9ca2-46a8-8a2b-f68e71a17c28","User","Basic user with minimal access - can apply to jobs","purple",True,True,"2025-07-30 06:33:01.169622+01","2025-07-30 06:33:01.169622+01",NULL,False,NULL,True
-"7fbecf54-0c46-405d-8f26-8d0c134e3fd6","Tester",NULL,"gray",False,True,"2025-07-31 03:54:39.979+01","2025-07-31 03:54:39.979+01","06387341-3c22-4119-a68b-309fb1a2dd89",False,NULL,True
 "9dc4b696-19fc-49e7-9d4d-d74432d2cf74","HR","HR personnel with recruitment access","green",True,True,"2025-07-30 06:33:01.169622+01","2025-07-30 06:33:01.169622+01",NULL,False,NULL,True
-"e0fccb1f-a1e2-4f14-986a-ab657d501e9f","hr-team","Auto-created from SAML group: hr-team","#10b981",False,True,"2025-08-13 17:23:48.218+01","2025-08-13 17:23:48.218+01",NULL,False,NULL,True
-"ec7988e5-19f2-450d-a948-8c266ab31fe0","employees","Auto-created from SAML group: employees","#10b981",False,True,"2025-08-13 17:23:48.237+01","2025-08-13 17:23:48.237+01",NULL,False,NULL,True
