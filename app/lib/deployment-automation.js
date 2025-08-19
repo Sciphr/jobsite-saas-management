@@ -803,7 +803,7 @@ export async function populateRolesAndPermissions(deploymentPath) {
     const permissionsCSV = fs.readFileSync('./permissions.csv', 'utf8');
     const rolePermissionsCSV = fs.readFileSync('./role_permissions.csv', 'utf8');
     
-    // Parse CSV data
+    // Parse CSV data with proper handling of mixed quoting
     const parseCSV = (csvContent) => {
       const lines = csvContent.split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
@@ -827,7 +827,20 @@ export async function populateRolesAndPermissions(deploymentPath) {
         
         const obj = {};
         headers.forEach((header, index) => {
-          obj[header] = values[index]?.replace(/"/g, '') || null;
+          let value = values[index]?.trim() || null;
+          // Remove quotes if present
+          if (value && value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          }
+          // Handle special values
+          if (value === 'NULL') {
+            value = null;
+          } else if (value === 'True') {
+            value = true;
+          } else if (value === 'False') {
+            value = false;
+          }
+          obj[header] = value;
         });
         return obj;
       });
@@ -893,12 +906,12 @@ async function populateTables() {
         role.name,
         role.description,
         role.color,
-        role.is_system_role === 'True',
-        role.is_active === 'True',
-        role.created_by === 'NULL' ? null : role.created_by,
-        role.is_ldap_role === 'True',
-        role.ldap_group_name === 'NULL' ? null : role.ldap_group_name,
-        role.is_editable === 'True'
+        role.is_system_role,
+        role.is_active,
+        role.created_by,
+        role.is_ldap_role,
+        role.ldap_group_name,
+        role.is_editable
       ]);
     }
     console.log(\`Inserted \${rolesData.length} roles\`);
@@ -918,7 +931,7 @@ async function populateTables() {
         permission.action,
         permission.description,
         permission.category,
-        permission.is_system_permission === 'True'
+        permission.is_system_permission
       ]);
     }
     console.log(\`Inserted \${permissionsData.length} permissions\`);
@@ -928,6 +941,8 @@ async function populateTables() {
     const rolePermissionsData = ${JSON.stringify(rolePermissionsData)};
     
     for (const rp of rolePermissionsData) {
+      // For initial deployment, set granted_by to NULL to avoid foreign key issues
+      // since the referenced users don't exist in a fresh deployment
       await client.query(\`
         INSERT INTO role_permissions (id, role_id, permission_id, granted_at, granted_by)
         VALUES ($1, $2, $3, NOW(), $4)
@@ -936,7 +951,7 @@ async function populateTables() {
         rp.id,
         rp.role_id,
         rp.permission_id,
-        rp.granted_by === 'NULL' ? null : rp.granted_by
+        null  // Always set to null for fresh deployments
       ]);
     }
     console.log(\`Inserted \${rolePermissionsData.length} role-permission mappings\`);

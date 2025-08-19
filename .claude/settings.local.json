@@ -5,7 +5,8 @@
       "Bash(touch:*)",
       "Bash(npx prisma:*)",
       "Bash(node:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(grep:*)"
     ],
     "defaultMode": "acceptEdits"
   }
