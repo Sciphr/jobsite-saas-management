@@ -329,12 +329,23 @@ export async function createDatabase(dbName, adminEmail, companyName) {
   try {
     console.log(`Creating database from template: ${dbName}`);
     
-    // First, transfer the SQL template file to the Pi
+    // First, transfer the SQL template file to the Pi in chunks
     console.log('Transferring database template to Pi...');
     const fs = require('fs');
     const templateSQL = fs.readFileSync('./asari_template.sql', 'utf8');
-    const base64Template = Buffer.from(templateSQL).toString('base64');
-    await runSSHCommand(`echo "${base64Template}" | base64 -d > /tmp/asari_template_${dbName}.sql`);
+    const tempFile = `/tmp/asari_template_${dbName}.sql`;
+    
+    // Clear the temp file first
+    await runSSHCommand(`> ${tempFile}`);
+    
+    // Transfer in chunks to avoid command line length limits
+    const chunkSize = 50000; // 50KB chunks
+    for (let i = 0; i < templateSQL.length; i += chunkSize) {
+      const chunk = templateSQL.slice(i, i + chunkSize);
+      const base64Chunk = Buffer.from(chunk).toString('base64');
+      await runSSHCommand(`echo "${base64Chunk}" | base64 -d >> ${tempFile}`);
+    }
+    console.log('Template file transferred successfully');
     
     // Create empty database
     console.log('Creating empty database...');
@@ -343,12 +354,12 @@ export async function createDatabase(dbName, adminEmail, companyName) {
     
     // Restore from template
     console.log('Restoring database from template...');
-    const restoreCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -f /tmp/asari_template_${dbName}.sql`;
+    const restoreCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -f ${tempFile}`;
     const restoreResult = await runSSHCommand(restoreCommand);
     console.log('Template restoration output:', restoreResult.stdout);
     
     // Clean up template file
-    await runSSHCommand(`rm -f /tmp/asari_template_${dbName}.sql`);
+    await runSSHCommand(`rm -f ${tempFile}`);
     
     // Test database connection
     console.log('Testing database connection...');

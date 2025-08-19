@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBackupHistory } from "../../hooks/useInstallations";
-import DeploymentProgress from "../../components/DeploymentProgress";
+import PersistentDeploymentProgress from "../../components/PersistentDeploymentProgress";
 import DeletionProgress from "../../components/DeletionProgress";
 
 function DeploymentConfig({ installation, onUpdate }) {
@@ -18,7 +18,6 @@ function DeploymentConfig({ installation, onUpdate }) {
   const [usedPorts, setUsedPorts] = useState([]);
   const [usedDomains, setUsedDomains] = useState([]);
   const [conflicts, setConflicts] = useState({});
-  const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     fetchConflictData();
@@ -160,7 +159,6 @@ function DeploymentConfig({ installation, onUpdate }) {
       )
     ) {
       setLoading(true);
-      setShowProgress(true);
 
       try {
         // Initialize WebSocket connection first
@@ -183,21 +181,22 @@ function DeploymentConfig({ installation, onUpdate }) {
         const data = await response.json();
 
         if (data.success) {
-          // Don't show alert anymore - progress modal will handle the UI
           console.log(
             `Deployment started! Estimated time: ${data.estimatedTime}`
           );
+          // Refresh the installation data to show updated deployment status
+          onUpdate();
         } else {
           alert(`Deployment failed: ${data.error}`);
-          setShowProgress(false);
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error starting deployment:", error);
         alert("Error starting deployment");
-        setShowProgress(false);
+        setLoading(false);
       } finally {
-        // Don't set loading false here - let the progress modal handle it
-        // setLoading(false);
+        // Reset loading state after a delay to show "Starting Deployment..." briefly
+        setTimeout(() => setLoading(false), 2000);
       }
     }
   };
@@ -327,16 +326,6 @@ function DeploymentConfig({ installation, onUpdate }) {
         </button>
       </div>
 
-      {/* Deployment Progress Modal */}
-      <DeploymentProgress
-        installationId={installation.id}
-        isOpen={showProgress}
-        onClose={() => {
-          setShowProgress(false);
-          setLoading(false);
-          onUpdate(); // Refresh installation data
-        }}
-      />
     </div>
   );
 }
@@ -795,9 +784,16 @@ export default function InstallationDetail({ params }) {
           </div>
         )}
 
-        {/* Deployment Status */}
+        {/* Persistent Deployment Progress */}
+        <PersistentDeploymentProgress 
+          installationId={installation?.id}
+          deploymentStatus={installation?.deployment_status}
+        />
+
+        {/* Deployment Status - Simple fallback for non-tracked deployments */}
         {installation?.deployment_status &&
-          installation.deployment_status !== "pending" && (
+          installation.deployment_status !== "pending" && 
+          !['starting', 'in_progress', 'completed', 'failed'].includes(installation.deployment_status) && (
             <div className="bg-white shadow rounded-lg mb-8">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">
