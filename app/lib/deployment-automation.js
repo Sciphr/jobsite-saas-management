@@ -329,43 +329,50 @@ export async function createDatabase(dbName, adminEmail, companyName) {
   try {
     console.log(`Creating database from template: ${dbName}`);
     
+    // Sanitize database name to prevent injection
+    const sanitizedDbName = dbName.replace(/[^a-zA-Z0-9_]/g, '_');
+    if (sanitizedDbName !== dbName) {
+      console.warn(`Database name sanitized from "${dbName}" to "${sanitizedDbName}"`);
+    }
+    
     // First, transfer the SQL template file to the Pi in chunks
     console.log('Transferring database template to Pi...');
     const fs = require('fs');
     const templateSQL = fs.readFileSync('./asari_template.sql', 'utf8');
-    const tempFile = `/tmp/asari_template_${dbName}.sql`;
+    const tempFile = `/tmp/asari_template_${sanitizedDbName}.sql`;
     
     // Clear the temp file first
-    await runSSHCommand(`> ${tempFile}`);
+    await runSSHCommand(`> '${tempFile}'`);
     
     // Transfer in chunks to avoid command line length limits
     const chunkSize = 50000; // 50KB chunks
     for (let i = 0; i < templateSQL.length; i += chunkSize) {
       const chunk = templateSQL.slice(i, i + chunkSize);
       const base64Chunk = Buffer.from(chunk).toString('base64');
-      await runSSHCommand(`echo "${base64Chunk}" | base64 -d >> ${tempFile}`);
+      // Use printf to avoid potential shell interpretation issues with echo
+      await runSSHCommand(`printf '%s' '${base64Chunk}' | base64 -d >> '${tempFile}'`);
     }
     console.log('Template file transferred successfully');
     
     // Create empty database
     console.log('Creating empty database...');
-    const createDbCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} createdb -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} ${dbName}`;
+    const createDbCommand = `PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' createdb -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' '${sanitizedDbName}'`;
     await runSSHCommand(createDbCommand);
     
     // Restore from template
     console.log('Restoring database from template...');
-    const restoreCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -f ${tempFile}`;
+    const restoreCommand = `PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' psql -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' -d '${sanitizedDbName}' -f '${tempFile}'`;
     const restoreResult = await runSSHCommand(restoreCommand);
     console.log('Template restoration output:', restoreResult.stdout);
     
     // Clean up template file
-    await runSSHCommand(`rm -f ${tempFile}`);
+    await runSSHCommand(`rm -f '${tempFile}'`);
     
-    // Test database connection
+    // Test database connection with simple query
     console.log('Testing database connection...');
-    const testConnectionCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -d ${dbName} -c "SELECT COUNT(*) FROM roles;" | head -3 | tail -1`;
+    const testConnectionCommand = `PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' psql -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' -d '${sanitizedDbName}' -c 'SELECT 1;'`;
     const connectionTest = await runSSHCommand(testConnectionCommand);
-    console.log('Database connection test successful - roles table has', connectionTest.stdout.trim(), 'records');
+    console.log('Database connection test successful');
     
     console.log('Database created from template successfully');
     return { success: true };
@@ -374,7 +381,7 @@ export async function createDatabase(dbName, adminEmail, companyName) {
     
     // Clean up template file on error
     try {
-      await runSSHCommand(`rm -f /tmp/asari_template_${dbName}.sql`);
+      await runSSHCommand(`rm -f '/tmp/asari_template_${sanitizedDbName}.sql'`);
     } catch (cleanupError) {
       console.warn('Could not clean up template file:', cleanupError);
     }
@@ -400,7 +407,7 @@ export async function createMinioBucket(bucketName) {
     console.log(`Creating MinIO bucket: ${bucketName}`);
     
     // Use MinIO client on Pi to create bucket
-    const mcAliasCommand = `mc alias set local http://${DEPLOYMENT_CONFIG.MINIO_ENDPOINT}:${DEPLOYMENT_CONFIG.MINIO_PORT} ${DEPLOYMENT_CONFIG.MINIO_ACCESS_KEY} ${DEPLOYMENT_CONFIG.MINIO_SECRET_KEY}`;
+    const mcAliasCommand = `mc alias set local 'http://${DEPLOYMENT_CONFIG.MINIO_ENDPOINT}:${DEPLOYMENT_CONFIG.MINIO_PORT}' '${DEPLOYMENT_CONFIG.MINIO_ACCESS_KEY}' '${DEPLOYMENT_CONFIG.MINIO_SECRET_KEY}'`;
     await runSSHCommand(mcAliasCommand);
     
     const createBucketCommand = `mc mb local/${bucketName}`;
@@ -682,7 +689,7 @@ export async function runDatabaseMigrations(deploymentPath) {
   try {
     console.log('Running database migrations on Pi...');
     
-    const result = await runSSHCommand(`cd ${deploymentPath} && npx prisma db push`);
+    const result = await runSSHCommand(`cd "${deploymentPath}" && npx prisma db push`);
     
     console.log('Database migrations completed successfully on Pi');
     return { success: true };

@@ -215,7 +215,7 @@ export async function dropCustomerDatabase(subdomain) {
     const dbName = `${subdomain}_asari_db`;
     
     // Check if database exists first
-    const checkDbCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -lqt | cut -d \\| -f 1 | grep -qw ${dbName} && echo "exists" || echo "not found"`;
+    const checkDbCommand = `PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' psql -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' -lqt | cut -d \\| -f 1 | grep -qw '${dbName}' && echo "exists" || echo "not found"`;
     const checkResult = await runSSHCommand(checkDbCommand);
     
     if (checkResult.stdout.includes('not found')) {
@@ -228,11 +228,11 @@ export async function dropCustomerDatabase(subdomain) {
     await runSSHCommand(`cat > /tmp/terminate_${dbName}.sql << 'EOF'
 SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}';
 EOF`);
-    await runSSHCommand(`PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} psql -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} -f /tmp/terminate_${dbName}.sql`);
+    await runSSHCommand(`PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' psql -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' -f '/tmp/terminate_${dbName}.sql'`);
     await runSSHCommand(`rm -f /tmp/terminate_${dbName}.sql`);
     
     // Drop the database
-    const dropDbCommand = `PGPASSWORD=${DEPLOYMENT_CONFIG.DB_PASSWORD} dropdb -h ${DEPLOYMENT_CONFIG.DB_HOST} -U ${DEPLOYMENT_CONFIG.DB_USER} ${dbName}`;
+    const dropDbCommand = `PGPASSWORD='${DEPLOYMENT_CONFIG.DB_PASSWORD}' dropdb -h '${DEPLOYMENT_CONFIG.DB_HOST}' -U '${DEPLOYMENT_CONFIG.DB_USER}' '${dbName}'`;
     await runSSHCommand(dropDbCommand);
     
     // Verify database was dropped
@@ -270,7 +270,7 @@ export async function removeMinIOBucket(subdomain) {
     }
     
     // Set up MinIO alias
-    const mcAliasCommand = `mc alias set local http://${DEPLOYMENT_CONFIG.MINIO_ENDPOINT}:${DEPLOYMENT_CONFIG.MINIO_PORT} ${DEPLOYMENT_CONFIG.MINIO_ACCESS_KEY} ${DEPLOYMENT_CONFIG.MINIO_SECRET_KEY}`;
+    const mcAliasCommand = `mc alias set local 'http://${DEPLOYMENT_CONFIG.MINIO_ENDPOINT}:${DEPLOYMENT_CONFIG.MINIO_PORT}' '${DEPLOYMENT_CONFIG.MINIO_ACCESS_KEY}' '${DEPLOYMENT_CONFIG.MINIO_SECRET_KEY}'`;
     await runSSHCommand(mcAliasCommand);
     
     // Check if bucket exists
