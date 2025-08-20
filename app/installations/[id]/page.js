@@ -863,6 +863,19 @@ export default function InstallationDetail({ params }) {
                   )}
                 </div>
 
+                {/* DEBUG: Show installation data for troubleshooting */}
+                {installation.deployment_status === "completed" && (
+                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="text-sm font-medium text-yellow-800 mb-2">DEBUG INFO (Remove this later)</h4>
+                    <div className="text-xs text-yellow-700 space-y-1">
+                      <div>Deployment Status: {installation.deployment_status}</div>
+                      <div>Admin Username: {installation.admin_username || 'NULL/EMPTY'}</div>
+                      <div>Admin Password: {installation.admin_password || 'NULL/EMPTY'}</div>
+                      <div>Database URL: {installation.database_url ? 'Present' : 'NULL/EMPTY'}</div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Admin Credentials - Only show when deployment is completed and credentials exist */}
                 {installation.deployment_status === "completed" &&
                   installation.admin_username &&
