@@ -561,6 +561,74 @@ export default function InstallationDetail({ params }) {
     router.push("/"); // Redirect to dashboard
   };
 
+  const handleGenerateSetupToken = async () => {
+    if (!installation.deployment_url) {
+      alert("Please set a deployment URL for this installation first (in the edit page) before generating a setup token.");
+      return;
+    }
+
+    if (!confirm("Generate a setup token for this installation? This will allow the customer to complete their initial configuration.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/installations/${installationId}/setup-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "generate" }),
+      });
+
+      if (response.ok) {
+        alert("Setup token generated successfully");
+        fetchInstallation(); // Refresh to show new token
+      } else {
+        const data = await response.json();
+        alert(`Failed to generate setup token: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error generating setup token:", error);
+      alert("Error generating setup token");
+    }
+  };
+
+  const handleRegenerateSetupToken = async () => {
+    if (!confirm("Are you sure you want to regenerate the setup token? The current token will be invalidated.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/installations/${installationId}/setup-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regenerate" }),
+      });
+
+      if (response.ok) {
+        alert("Setup token regenerated successfully");
+        fetchInstallation(); // Refresh to show new token
+      } else {
+        const data = await response.json();
+        alert(`Failed to regenerate setup token: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error regenerating setup token:", error);
+      alert("Error regenerating setup token");
+    }
+  };
+
+  const handleCopySetupUrl = async () => {
+    const setupUrl = `${installation.deployment_url}/setup?token=${installation.setup_token}`;
+    
+    try {
+      await navigator.clipboard.writeText(setupUrl);
+      alert("Setup URL copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+      // Fallback: show the URL in a prompt
+      prompt("Copy this setup URL:", setupUrl);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -876,36 +944,110 @@ export default function InstallationDetail({ params }) {
                   </div>
                 )}
 
-                {/* Admin Credentials - Only show when deployment is completed and credentials exist */}
-                {installation.deployment_status === "completed" &&
-                  installation.admin_username &&
-                  installation.admin_password && (
-                    <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                      <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-3">
-                        Admin Login Credentials
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Setup Token - Show when setup not completed and token exists */}
+                {!installation.setup_completed &&
+                  installation.setup_token && (
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          First-Time Setup Token
+                        </h4>
+                        <button
+                          onClick={() => handleRegenerateSetupToken()}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 underline"
+                        >
+                          Regenerate
+                        </button>
+                      </div>
+                      <div className="space-y-3">
                         <div>
-                          <dt className="text-sm font-medium text-green-700 dark:text-green-300">
-                            Email
+                          <dt className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                            Setup URL
                           </dt>
-                          <dd className="text-sm text-green-900 dark:text-green-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border">
-                            {installation.admin_username}
-                          </dd>
+                          <div className="flex">
+                            <dd className="flex-1 text-sm text-blue-900 dark:text-blue-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded-l border break-all">
+                              {installation.deployment_url}/setup?token={installation.setup_token}
+                            </dd>
+                            <button
+                              onClick={() => handleCopySetupUrl()}
+                              className="px-3 py-1 bg-blue-600 text-white rounded-r text-xs hover:bg-blue-700"
+                            >
+                              Copy
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <dt className="text-sm font-medium text-green-700 dark:text-green-300">
-                            Password
-                          </dt>
-                          <dd className="text-sm text-green-900 dark:text-green-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border">
-                            {installation.admin_password}
-                          </dd>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <dt className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                              Token
+                            </dt>
+                            <dd className="text-sm text-blue-900 dark:text-blue-100 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border truncate">
+                              {installation.setup_token}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                              Expires
+                            </dt>
+                            <dd className="text-sm text-blue-900 dark:text-blue-100 bg-white dark:bg-gray-800 px-2 py-1 rounded border">
+                              {installation.setup_token_expires_at 
+                                ? new Date(installation.setup_token_expires_at).toLocaleString()
+                                : 'N/A'
+                              }
+                            </dd>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                        Use these credentials to log into your newly deployed
-                        application. Store them securely and change the password
-                        after first login.
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                        Send this setup URL to the customer to complete first-time configuration.
+                        They will create their admin account, configure SMTP, and set up branding.
+                      </p>
+                    </div>
+                  )}
+
+                {/* Generate Setup Token - Show when no token exists and setup not completed */}
+                {!installation.setup_completed &&
+                  !installation.setup_token && (
+                    <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            Setup Token Required
+                          </h4>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                            Generate a setup token to allow the customer to complete their initial configuration.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleGenerateSetupToken()}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700 transition-colors"
+                        >
+                          Generate Token
+                        </button>
+                      </div>
+                      {!installation.deployment_url && (
+                        <div className="mt-3 p-3 bg-yellow-100 dark:bg-yellow-800/30 border border-yellow-300 dark:border-yellow-700 rounded">
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            ⚠️ <strong>Note:</strong> No deployment URL is set for this installation. 
+                            Make sure to set the deployment URL in the edit page before generating a setup token.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {/* Setup Completed - Show when setup is done */}
+                {installation.setup_completed && (
+                    <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                        ✅ Setup Completed
+                      </h4>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Customer has completed the initial setup on {' '}
+                        {installation.setup_completed_at 
+                          ? new Date(installation.setup_completed_at).toLocaleString()
+                          : 'Unknown date'
+                        }
                       </p>
                     </div>
                   )}

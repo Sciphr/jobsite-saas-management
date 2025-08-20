@@ -38,6 +38,10 @@ model saas_installations {
   admin_name            String?                     @db.VarChar(255)
   admin_username        String?
   admin_password        String?
+  setup_completed       Boolean                     @default(false)
+  setup_token           String?                     @unique @db.VarChar(255)
+  setup_token_expires_at DateTime?                   @db.Timestamptz(6)
+  setup_completed_at    DateTime?                   @db.Timestamptz(6)
   saas_backup_logs      saas_backup_logs[]
   saas_deployments      saas_deployments[]
   saas_health_checks    saas_health_checks[]
@@ -48,6 +52,7 @@ model saas_installations {
 
   @@index([domain], map: "idx_saas_installations_domain")
   @@index([status], map: "idx_saas_installations_status")
+  @@index([setup_token], map: "idx_saas_installations_setup_token")
 }
 
 model saas_recovery_tokens {

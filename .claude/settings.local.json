@@ -8,6 +8,9 @@
       "Bash(awk:*)",
       "Bash(grep:*)"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "F:\\CODING\\JobSite"
+    ]
   }
 }

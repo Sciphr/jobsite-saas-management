@@ -754,7 +754,39 @@ export async function runDatabaseMigrations(deploymentPath) {
 }
 
 /**
- * Create admin user for the new installation
+ * Generate setup token for the new installation
+ */
+export async function generateSetupToken(installationId, companyName) {
+  try {
+    console.log(`Generating setup token for installation: ${installationId}`);
+    
+    // Generate a secure random token (32 bytes = 64 hex chars)
+    const setupToken = require('crypto').randomBytes(32).toString('hex');
+    
+    // Set token to expire in 7 days
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    
+    // Update the installation with the setup token
+    await managementPrisma.saas_installations.update({
+      where: { id: installationId },
+      data: {
+        setup_token: setupToken,
+        setup_token_expires_at: expiresAt,
+        setup_completed: false
+      }
+    });
+    
+    console.log(`Setup token generated successfully for ${companyName}`);
+    return { success: true, setupToken, expiresAt };
+  } catch (error) {
+    console.error('Error generating setup token:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Create admin user for the new installation (DEPRECATED - replaced by setup tokens)
  */
 export async function createAdminUser(deploymentPath, adminEmail, companyName) {
   try {
@@ -907,7 +939,7 @@ export async function deployNewCustomer(customerData) {
     'Installing dependencies',
     'Building application',
     'Running database migrations',
-    'Creating admin user',
+    'Generating setup token',
     'Creating PM2 configuration',
     'Starting PM2 process',
     'Configuring nginx',
@@ -1018,11 +1050,11 @@ export async function deployNewCustomer(customerData) {
     }
     emitProgress(customerData.installationId, 8, 'completed', 'Application built successfully');
     
-    // Step 9: Create admin user
-    emitProgress(customerData.installationId, 9, 'in_progress', 'Creating admin user...');
-    const adminUserResult = await createAdminUser(deploymentPath, customerData.adminEmail, customerData.companyName);
-    if (!adminUserResult.success) throw new Error(`Admin user creation failed: ${adminUserResult.error}`);
-    emitProgress(customerData.installationId, 9, 'completed', `Admin user created: ${adminUserResult.adminEmail}`);
+    // Step 9: Generate setup token
+    emitProgress(customerData.installationId, 9, 'in_progress', 'Generating setup token...');
+    const setupTokenResult = await generateSetupToken(customerData.installationId, customerData.companyName);
+    if (!setupTokenResult.success) throw new Error(`Setup token generation failed: ${setupTokenResult.error}`);
+    emitProgress(customerData.installationId, 9, 'completed', `Setup token generated (expires: ${setupTokenResult.expiresAt.toLocaleDateString()})`);
     
     // Step 10: Create PM2 configuration
     emitProgress(customerData.installationId, 10, 'in_progress', 'Creating PM2 configuration...');
@@ -1067,15 +1099,13 @@ export async function deployNewCustomer(customerData) {
       }
     });
     
-    // Update installation with admin credentials for display
+    // Update installation with deployment info (no admin credentials stored)
     await managementPrisma.saas_installations.update({
       where: { id: customerData.installationId },
       data: {
         deployment_status: 'completed',
         deployment_url: envVars.NEXTAUTH_URL,
         database_url: envVars.DATABASE_URL,
-        admin_username: adminUserResult.adminEmail,
-        admin_password: adminUserResult.adminPassword, // Store temporarily for display
         deployment_path: deploymentPath
       }
     });
@@ -1086,7 +1116,7 @@ export async function deployNewCustomer(customerData) {
     console.log(`MinIO Bucket: ${bucketName}`);
     console.log(`Backup Bucket: ${backupBucketName}`);
     console.log(`PM2 App: ${envVars.PM2_APP_NAME}`);
-    console.log(`Admin User: ${adminUserResult.adminEmail} / ${adminUserResult.adminPassword}`);
+    console.log(`Setup Token: ${setupTokenResult.setupToken} (expires: ${setupTokenResult.expiresAt})`);
     
     return {
       success: true,
@@ -1096,9 +1126,9 @@ export async function deployNewCustomer(customerData) {
       dbName,
       bucketName,
       backupBucketName,
-      adminCredentials: {
-        email: adminUserResult.adminEmail,
-        password: adminUserResult.adminPassword
+      setupToken: {
+        token: setupTokenResult.setupToken,
+        expiresAt: setupTokenResult.expiresAt
       }
     };
     
