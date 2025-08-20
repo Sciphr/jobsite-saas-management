@@ -3,32 +3,35 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useInstallationDetail, useUpdateInstallation } from "../../../hooks/useInstallations";
+import {
+  useInstallationDetail,
+  useUpdateInstallation,
+} from "../../../hooks/useInstallations";
 import DarkModeToggle from "../../../components/DarkModeToggle";
 
 export default function EditInstallation({ params }) {
   const router = useRouter();
   const [installationId, setInstallationId] = useState(null);
-  const [success, setSuccess] = useState('');
-  
+  const [success, setSuccess] = useState("");
+
   // React Query hooks
-  const { 
-    data: installation, 
-    isLoading: loading, 
-    error: fetchError 
+  const {
+    data: installation,
+    isLoading: loading,
+    error: fetchError,
   } = useInstallationDetail(installationId);
-  
+
   const updateMutation = useUpdateInstallation();
-  
+
   const [formData, setFormData] = useState({
-    companyName: '',
-    domain: '',
-    adminEmail: '',
-    databaseUrl: '',
-    billingEmail: '',
-    billingPlan: 'Pro',
-    notes: '',
-    status: 'active'
+    companyName: "",
+    domain: "",
+    adminEmail: "",
+    databaseUrl: "",
+    billingEmail: "",
+    billingPlan: "Pro",
+    notes: "",
+    status: "active",
   });
 
   useEffect(() => {
@@ -43,44 +46,44 @@ export default function EditInstallation({ params }) {
   useEffect(() => {
     if (installation) {
       setFormData({
-        companyName: installation.company_name || '',
-        domain: installation.domain || '',
-        adminEmail: installation.admin_email || '',
-        databaseUrl: installation.database_url || '',
-        billingEmail: installation.billing_email || '',
-        billingPlan: installation.billing_plan || 'Pro',
-        notes: installation.notes || '',
-        status: installation.status || 'active'
+        companyName: installation.company_name || "",
+        domain: installation.domain || "",
+        adminEmail: installation.admin_email || "",
+        databaseUrl: installation.database_url || "",
+        billingEmail: installation.billing_email || "",
+        billingPlan: installation.billing_plan || "Pro",
+        notes: installation.notes || "",
+        status: installation.status || "active",
       });
     }
   }, [installation]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccess('');
+    setSuccess("");
 
     try {
-      await updateMutation.mutateAsync({ 
-        id: installationId, 
-        data: formData 
+      await updateMutation.mutateAsync({
+        id: installationId,
+        data: formData,
       });
-      
-      setSuccess('Installation updated successfully!');
-      
+
+      setSuccess("Installation updated successfully!");
+
       // Redirect back to installation detail after 1.5 seconds
       setTimeout(() => {
         router.push(`/installations/${installationId}`);
       }, 1500);
     } catch (error) {
       // Error is handled by React Query and displayed below
-      console.error('Error updating installation:', error);
+      console.error("Error updating installation:", error);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -100,7 +103,7 @@ export default function EditInstallation({ params }) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 text-xl mb-4">
-            {fetchError?.message || 'Failed to load installation'}
+            {fetchError?.message || "Failed to load installation"}
           </div>
           <Link href="/" className="text-indigo-600 hover:text-indigo-500">
             Back to Dashboard
@@ -117,12 +120,19 @@ export default function EditInstallation({ params }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-3">
             <div className="flex flex-col w-full">
-              <Link href={`/installations/${installationId}`} className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer">
+              <Link
+                href={`/installations/${installationId}`}
+                className="text-indigo-600 hover:text-indigo-500 mb-2 sm:mb-3 cursor-pointer"
+              >
                 ← Back to Installation
               </Link>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100">
-                <span className="hidden sm:inline">Edit Installation: {installation?.company_name}</span>
-                <span className="sm:hidden">Edit: {installation?.company_name}</span>
+                <span className="hidden sm:inline">
+                  Edit Installation: {installation?.company_name}
+                </span>
+                <span className="sm:hidden">
+                  Edit: {installation?.company_name}
+                </span>
               </h1>
             </div>
             <div className="flex items-center">
@@ -138,7 +148,8 @@ export default function EditInstallation({ params }) {
             {updateMutation.error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <div className="text-sm text-red-800">
-                  {updateMutation.error?.message || 'Failed to update installation'}
+                  {updateMutation.error?.message ||
+                    "Failed to update installation"}
                 </div>
               </div>
             )}
@@ -158,7 +169,9 @@ export default function EditInstallation({ params }) {
                 type="text"
                 required
                 value={formData.companyName}
-                onChange={(e) => handleInputChange('companyName', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("companyName", e.target.value)
+                }
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
@@ -172,7 +185,7 @@ export default function EditInstallation({ params }) {
                 type="text"
                 required
                 value={formData.domain}
-                onChange={(e) => handleInputChange('domain', e.target.value)}
+                onChange={(e) => handleInputChange("domain", e.target.value)}
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -189,7 +202,9 @@ export default function EditInstallation({ params }) {
                 type="email"
                 required
                 value={formData.adminEmail}
-                onChange={(e) => handleInputChange('adminEmail', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("adminEmail", e.target.value)
+                }
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
@@ -202,7 +217,9 @@ export default function EditInstallation({ params }) {
               <input
                 type="text"
                 value={formData.databaseUrl}
-                onChange={(e) => handleInputChange('databaseUrl', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("databaseUrl", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
               />
             </div>
@@ -215,7 +232,9 @@ export default function EditInstallation({ params }) {
               <input
                 type="email"
                 value={formData.billingEmail}
-                onChange={(e) => handleInputChange('billingEmail', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("billingEmail", e.target.value)
+                }
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
@@ -227,8 +246,10 @@ export default function EditInstallation({ params }) {
               </label>
               <select
                 value={formData.billingPlan}
-                onChange={(e) => handleInputChange('billingPlan', e.target.value)}
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                onChange={(e) =>
+                  handleInputChange("billingPlan", e.target.value)
+                }
+                className="w-full px-3 py-2.5 sm:py-2 border dark:bg-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="Pro">Pro</option>
                 <option value="Enterprise">Enterprise</option>
@@ -243,8 +264,8 @@ export default function EditInstallation({ params }) {
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                onChange={(e) => handleInputChange("status", e.target.value)}
+                className="w-full px-3 py-2.5 sm:py-2 border dark:bg-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
@@ -259,7 +280,7 @@ export default function EditInstallation({ params }) {
               </label>
               <textarea
                 value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
@@ -267,13 +288,21 @@ export default function EditInstallation({ params }) {
 
             {/* Read-only fields info */}
             <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Automatic Fields</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">
+                Automatic Fields
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                 <div>
-                  <span className="font-medium">Created:</span> {installation?.created_at ? new Date(installation.created_at).toLocaleString() : 'N/A'}
+                  <span className="font-medium">Created:</span>{" "}
+                  {installation?.created_at
+                    ? new Date(installation.created_at).toLocaleString()
+                    : "N/A"}
                 </div>
                 <div>
-                  <span className="font-medium">Last Accessed:</span> {installation?.last_accessed_at ? new Date(installation.last_accessed_at).toLocaleString() : 'Never'}
+                  <span className="font-medium">Last Accessed:</span>{" "}
+                  {installation?.last_accessed_at
+                    ? new Date(installation.last_accessed_at).toLocaleString()
+                    : "Never"}
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
@@ -298,7 +327,9 @@ export default function EditInstallation({ params }) {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Saving...
                   </div>
-                ) : 'Save Changes'}
+                ) : (
+                  "Save Changes"
+                )}
               </button>
             </div>
           </form>
