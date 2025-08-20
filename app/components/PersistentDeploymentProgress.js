@@ -11,6 +11,7 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
   const [hasFailed, setHasFailed] = useState(false);
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Deployment steps - should match the server-side steps
   const steps = [
@@ -115,10 +116,14 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
           // Check if deployment is complete
           if (data.step === steps.length - 1 && data.status === 'completed') {
             setIsComplete(true);
+            // Auto-collapse after completion
+            setTimeout(() => {
+              setIsCollapsed(true);
+            }, 3000);
             // Refresh the page to show admin credentials and updated deployment status
             setTimeout(() => {
               window.location.reload();
-            }, 2000);
+            }, 5000);
           }
 
           // Check if any step failed
@@ -180,12 +185,22 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
           <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
             {isComplete ? 'Deployment Complete!' : hasFailed ? 'Deployment Issues' : 'Deployment Progress'}
           </h2>
-          <button
-            onClick={() => setShowLogs(!showLogs)}
-            className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
-          >
-            {showLogs ? 'Hide Logs' : 'Show Server Logs'}
-          </button>
+          <div className="flex items-center space-x-3">
+            {isComplete && (
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-sm text-gray-600 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-300 cursor-pointer"
+              >
+                {isCollapsed ? 'Show Details' : 'Hide Details'}
+              </button>
+            )}
+            <button
+              onClick={() => setShowLogs(!showLogs)}
+              className="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer"
+            >
+              {showLogs ? 'Hide Logs' : 'Show Server Logs'}
+            </button>
+          </div>
         </div>
         
         {/* Progress Bar */}
@@ -205,9 +220,24 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 py-4">
-        {/* Steps */}
-        <div className="space-y-3 mb-4">
+      {/* Collapsed Summary */}
+      {isCollapsed && isComplete && (
+        <div className="px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">Deployment completed successfully!</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isCollapsed && (
+        <div className="px-4 sm:px-6 py-4">
+          {/* Steps */}
+          <div className="space-y-3 mb-4">
           {progress.map((step, index) => (
             <div key={index} className="flex items-start space-x-3">
               {getStepIcon(step)}
@@ -278,24 +308,25 @@ export default function PersistentDeploymentProgress({ installationId, deploymen
           </div>
         )}
 
-        {/* Status Footer */}
-        {(isComplete || hasFailed) && (
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-            <div className="flex justify-between items-center">
-              {hasFailed && !isComplete && (
-                <p className="text-sm text-orange-600 dark:text-orange-400">
-                  Deployment encountered issues. Check the logs above for details.
-                </p>
-              )}
-              {isComplete && (
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Deployment completed successfully! Your application should now be available.
-                </p>
-              )}
+          {/* Status Footer */}
+          {(isComplete || hasFailed) && (
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+              <div className="flex justify-between items-center">
+                {hasFailed && !isComplete && (
+                  <p className="text-sm text-orange-600 dark:text-orange-400">
+                    Deployment encountered issues. Check the logs above for details.
+                  </p>
+                )}
+                {isComplete && (
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    Deployment completed successfully! Your application should now be available.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -599,20 +599,22 @@ export default function InstallationDetail({ params }) {
                 {installation?.company_name}
               </h1>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               <Link
                 href={`/installations/${installation?.id}/edit`}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center whitespace-nowrap"
               >
                 Edit Installation
               </Link>
               <Link
                 href={`/recovery/create?installation=${installation?.id}`}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 sm:py-2 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 cursor-pointer text-center whitespace-nowrap"
               >
                 Create Recovery Token
               </Link>
-              <DarkModeToggle />
+              <div className="flex justify-center sm:justify-start">
+                <DarkModeToggle />
+              </div>
             </div>
           </div>
         </div>
@@ -1048,14 +1050,14 @@ export default function InstallationDetail({ params }) {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-white shadow rounded-lg mb-8 border-l-4 border-red-500">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-8 border-l-4 border-red-500">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-medium text-red-900 dark:text-red-100">
               Danger Zone
             </h2>
           </div>
           <div className="p-6">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
                   <svg
@@ -1073,10 +1075,10 @@ export default function InstallationDetail({ params }) {
                   </svg>
                 </div>
                 <div className="ml-3 flex-1">
-                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  <h3 className="text-sm font-medium text-red-900 dark:text-red-200">
                     Delete Installation
                   </h3>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                  <p className="text-sm text-red-800 dark:text-red-300 mt-1">
                     Permanently delete this installation and all associated
                     data. This action cannot be undone.
                   </p>

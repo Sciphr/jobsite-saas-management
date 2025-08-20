@@ -750,7 +750,10 @@ export default function SaaSManagementDashboard() {
                   </tr>
                 ) : (
                   installations.map((installation) => (
-                    <tr key={installation.id} className="hover:bg-gray-700">
+                    <tr
+                      key={installation.id}
+                      className="hover:bg-gray-700 dark:hover:bg-gray-400"
+                    >
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">

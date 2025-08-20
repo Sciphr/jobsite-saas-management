@@ -462,11 +462,9 @@ export async function createSupabaseBucket(bucketName, customerData) {
       return { success: true, existed: true };
     }
     
-    // Create the bucket
+    // Create the bucket with simplified options
     const { data, error } = await supabase.storage.createBucket(bucketName, {
-      public: false, // Private bucket for backups
-      allowedMimeTypes: ['application/sql', 'application/gzip', 'application/x-gzip', 'application/octet-stream'],
-      fileSizeLimit: 1024 * 1024 * 1024 * 2 // 2GB limit for backup files
+      public: false // Private bucket for backups
     });
     
     if (error) {
