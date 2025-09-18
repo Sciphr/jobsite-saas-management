@@ -29,7 +29,9 @@ async function performHttpCheck(domain) {
       method: 'GET',
       timeout: 10000,
       headers: {
-        'User-Agent': 'SaaS-Management-Health-Check/1.0'
+        'User-Agent': 'Mozilla/5.0 (compatible; SaaS-Management-Health-Check/1.0)',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
       }
     });
     

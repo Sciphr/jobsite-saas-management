@@ -10,6 +10,7 @@ export default function SaaSManagementDashboard() {
   const [isRunningHealthChecks, setIsRunningHealthChecks] = useState(false);
   const [isRunningBackups, setIsRunningBackups] = useState(false);
   const [isCleaningUpBackups, setIsCleaningUpBackups] = useState(false);
+  const [updatingTiers, setUpdatingTiers] = useState(new Set());
 
   // React Query for dashboard data
   const {
@@ -115,6 +116,42 @@ export default function SaaSManagementDashboard() {
       } finally {
         setIsCleaningUpBackups(false);
       }
+    }
+  };
+
+  const updateSubscriptionTier = async (installationId, newTier) => {
+    if (!confirm(`Change subscription tier to ${newTier}? This will immediately affect the installation's available features.`)) {
+      return;
+    }
+
+    setUpdatingTiers(prev => new Set([...prev, installationId]));
+
+    try {
+      const response = await fetch("/api/installations/tier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          installation_id: installationId,
+          new_tier: newTier,
+        }),
+      });
+
+      if (response.ok) {
+        alert(`Successfully updated subscription tier to ${newTier}!`);
+        fetchDashboardData(); // Refresh the dashboard
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update tier: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error("Error updating subscription tier:", error);
+      alert("Error updating subscription tier");
+    } finally {
+      setUpdatingTiers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(installationId);
+        return newSet;
+      });
     }
   };
 
@@ -677,7 +714,7 @@ export default function SaaSManagementDashboard() {
                         </a>
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex flex-col gap-1">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           installation.status === "active"
@@ -689,6 +726,20 @@ export default function SaaSManagementDashboard() {
                       >
                         {installation.status}
                       </span>
+                      <div className="flex items-center">
+                        <select
+                          value={installation.subscription_tier || 'basic'}
+                          onChange={(e) => updateSubscriptionTier(installation.id, e.target.value)}
+                          disabled={updatingTiers.has(installation.id)}
+                          className="text-xs font-semibold rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                          <option value="basic">Basic</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                        {updatingTiers.has(installation.id) && (
+                          <div className="ml-1 animate-spin rounded-full h-3 w-3 border-b-2 border-indigo-600"></div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -724,6 +775,9 @@ export default function SaaSManagementDashboard() {
                   <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Subscription
+                  </th>
                   <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Last Accessed
                   </th>
@@ -752,7 +806,7 @@ export default function SaaSManagementDashboard() {
                   installations.map((installation) => (
                     <tr
                       key={installation.id}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-400"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-600"
                     >
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -797,6 +851,22 @@ export default function SaaSManagementDashboard() {
                         >
                           {installation.status}
                         </span>
+                      </td>
+                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <select
+                            value={installation.subscription_tier || 'basic'}
+                            onChange={(e) => updateSubscriptionTier(installation.id, e.target.value)}
+                            disabled={updatingTiers.has(installation.id)}
+                            className="text-xs font-semibold rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            <option value="basic">Basic</option>
+                            <option value="enterprise">Enterprise</option>
+                          </select>
+                          {updatingTiers.has(installation.id) && (
+                            <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                          )}
+                        </div>
                       </td>
                       <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {installation.last_accessed_at

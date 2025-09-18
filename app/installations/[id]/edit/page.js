@@ -29,7 +29,6 @@ export default function EditInstallation({ params }) {
     adminEmail: "",
     databaseUrl: "",
     billingEmail: "",
-    billingPlan: "Pro",
     notes: "",
     status: "active",
   });
@@ -51,7 +50,6 @@ export default function EditInstallation({ params }) {
         adminEmail: installation.admin_email || "",
         databaseUrl: installation.database_url || "",
         billingEmail: installation.billing_email || "",
-        billingPlan: installation.billing_plan || "Pro",
         notes: installation.notes || "",
         status: installation.status || "active",
       });
@@ -143,7 +141,7 @@ export default function EditInstallation({ params }) {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {updateMutation.error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -162,7 +160,7 @@ export default function EditInstallation({ params }) {
 
             {/* Company Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Company Name *
               </label>
               <input
@@ -172,13 +170,13 @@ export default function EditInstallation({ params }) {
                 onChange={(e) =>
                   handleInputChange("companyName", e.target.value)
                 }
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
             {/* Domain */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Domain *
               </label>
               <input
@@ -186,16 +184,16 @@ export default function EditInstallation({ params }) {
                 required
                 value={formData.domain}
                 onChange={(e) => handleInputChange("domain", e.target.value)}
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 The domain where this customer's installation is hosted
               </p>
             </div>
 
             {/* Admin Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Admin Email *
               </label>
               <input
@@ -205,13 +203,13 @@ export default function EditInstallation({ params }) {
                 onChange={(e) =>
                   handleInputChange("adminEmail", e.target.value)
                 }
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
             {/* Database URL */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Database URL
               </label>
               <input
@@ -220,13 +218,13 @@ export default function EditInstallation({ params }) {
                 onChange={(e) =>
                   handleInputChange("databaseUrl", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
               />
             </div>
 
             {/* Billing Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Billing Email
               </label>
               <input
@@ -235,37 +233,19 @@ export default function EditInstallation({ params }) {
                 onChange={(e) =>
                   handleInputChange("billingEmail", e.target.value)
                 }
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
-            </div>
-
-            {/* Billing Plan */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Billing Plan
-              </label>
-              <select
-                value={formData.billingPlan}
-                onChange={(e) =>
-                  handleInputChange("billingPlan", e.target.value)
-                }
-                className="w-full px-3 py-2.5 sm:py-2 border dark:bg-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
-              >
-                <option value="Pro">Pro</option>
-                <option value="Enterprise">Enterprise</option>
-                <option value="Enterprise+">Enterprise+</option>
-              </select>
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Status
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => handleInputChange("status", e.target.value)}
-                className="w-full px-3 py-2.5 sm:py-2 border dark:bg-gray-700 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               >
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
@@ -275,23 +255,23 @@ export default function EditInstallation({ params }) {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Notes
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleInputChange("notes", e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
+                className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base sm:text-sm"
               />
             </div>
 
             {/* Read-only fields info */}
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">
+            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-4">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Automatic Fields
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
                 <div>
                   <span className="font-medium">Created:</span>{" "}
                   {installation?.created_at

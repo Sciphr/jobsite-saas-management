@@ -8,51 +8,53 @@ datasource db {
 }
 
 model saas_installations {
-  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  domain                String?                     @unique @db.VarChar(255)
-  company_name          String                      @db.VarChar(255)
-  admin_email           String                      @db.VarChar(255)
-  database_url          String?
-  status                String                      @default("active") @db.VarChar(50)
-  created_at            DateTime                    @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime                    @default(now()) @db.Timestamptz(6)
-  last_accessed_at      DateTime?                   @db.Timestamptz(6)
-  billing_email         String?                     @db.VarChar(255)
-  billing_plan          String?                     @default("Pro") @db.VarChar(100)
-  notes                 String?
-  billing_cycle         String?                     @default("monthly") @db.VarChar(50)
-  billing_amount        Decimal?                    @db.Decimal(10, 2)
-  next_billing_date     DateTime?                   @db.Timestamptz(6)
-  billing_status        String?                     @default("active") @db.VarChar(50)
-  last_health_check     DateTime?                   @db.Timestamptz(6)
-  health_status         String?                     @default("unknown") @db.VarChar(50)
-  health_details        Json?                       @db.Json
-  backup_enabled        Boolean?                    @default(true)
-  last_backup_at        DateTime?                   @db.Timestamptz(6)
-  backup_status         String?                     @default("pending") @db.VarChar(50)
-  deployment_status     String?                     @default("pending") @db.VarChar(20)
-  deployment_url        String?
-  deployment_path       String?
-  port_number           Int?
-  subdomain             String?                     @db.VarChar(100)
-  admin_name            String?                     @db.VarChar(255)
-  admin_username        String?
-  admin_password        String?
-  setup_completed       Boolean                     @default(false)
-  setup_token           String?                     @unique @db.VarChar(255)
+  id                     String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  domain                 String?                     @unique @db.VarChar(255)
+  company_name           String                      @db.VarChar(255)
+  admin_email            String                      @db.VarChar(255)
+  database_url           String?
+  status                 String                      @default("active") @db.VarChar(50)
+  created_at             DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                    @default(now()) @db.Timestamptz(6)
+  last_accessed_at       DateTime?                   @db.Timestamptz(6)
+  billing_email          String?                     @db.VarChar(255)
+  billing_plan           String?                     @default("Pro") @db.VarChar(100)
+  notes                  String?
+  billing_cycle          String?                     @default("monthly") @db.VarChar(50)
+  billing_amount         Decimal?                    @db.Decimal(10, 2)
+  next_billing_date      DateTime?                   @db.Timestamptz(6)
+  billing_status         String?                     @default("active") @db.VarChar(50)
+  last_health_check      DateTime?                   @db.Timestamptz(6)
+  health_status          String?                     @default("unknown") @db.VarChar(50)
+  health_details         Json?                       @db.Json
+  backup_enabled         Boolean?                    @default(true)
+  last_backup_at         DateTime?                   @db.Timestamptz(6)
+  backup_status          String?                     @default("pending") @db.VarChar(50)
+  deployment_status      String?                     @default("pending") @db.VarChar(20)
+  deployment_url         String?
+  deployment_path        String?
+  port_number            Int?
+  subdomain              String?                     @db.VarChar(100)
+  admin_name             String?                     @db.VarChar(255)
+  admin_username         String?
+  admin_password         String?
+  setup_completed        Boolean                     @default(false)
+  setup_completed_at     DateTime?                   @db.Timestamptz(6)
+  setup_token            String?                     @unique @db.VarChar(255)
   setup_token_expires_at DateTime?                   @db.Timestamptz(6)
-  setup_completed_at    DateTime?                   @db.Timestamptz(6)
-  saas_backup_logs      saas_backup_logs[]
-  saas_deployments      saas_deployments[]
-  saas_health_checks    saas_health_checks[]
-  saas_port_assignments saas_port_assignments[]
-  recovery_access_logs  saas_recovery_access_logs[]
-  recovery_tokens       saas_recovery_tokens[]
-  saas_support_tickets  saas_support_tickets[]
+  subscription_tier      String?                     @default("basic") @db.VarChar(20)
+  saas_backup_logs       saas_backup_logs[]
+  saas_deployments       saas_deployments[]
+  saas_health_checks     saas_health_checks[]
+  saas_port_assignments  saas_port_assignments[]
+  recovery_access_logs   saas_recovery_access_logs[]
+  recovery_tokens        saas_recovery_tokens[]
+  saas_support_tickets   saas_support_tickets[]
 
   @@index([domain], map: "idx_saas_installations_domain")
   @@index([status], map: "idx_saas_installations_status")
   @@index([setup_token], map: "idx_saas_installations_setup_token")
+  @@index([subscription_tier], map: "idx_saas_installations_subscription_tier")
 }
 
 model saas_recovery_tokens {

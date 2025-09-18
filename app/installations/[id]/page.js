@@ -336,6 +336,7 @@ export default function InstallationDetail({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [installationId, setInstallationId] = useState(null);
+  const [isUpdatingTier, setIsUpdatingTier] = useState(false);
   const [selectedToken, setSelectedToken] = useState(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [showSupportSection, setShowSupportSection] = useState(false);
@@ -618,7 +619,7 @@ export default function InstallationDetail({ params }) {
 
   const handleCopySetupUrl = async () => {
     const setupUrl = `${installation.deployment_url}/setup?token=${installation.setup_token}`;
-    
+
     try {
       await navigator.clipboard.writeText(setupUrl);
       alert("Setup URL copied to clipboard!");
@@ -626,6 +627,38 @@ export default function InstallationDetail({ params }) {
       console.error("Failed to copy to clipboard:", error);
       // Fallback: show the URL in a prompt
       prompt("Copy this setup URL:", setupUrl);
+    }
+  };
+
+  const updateSubscriptionTier = async (newTier) => {
+    if (!confirm(`Change subscription tier to ${newTier}? This will immediately affect the installation's available features.`)) {
+      return;
+    }
+
+    setIsUpdatingTier(true);
+
+    try {
+      const response = await fetch("/api/installations/tier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          installation_id: installationId,
+          new_tier: newTier,
+        }),
+      });
+
+      if (response.ok) {
+        alert(`Successfully updated subscription tier to ${newTier}!`);
+        fetchInstallation(); // Refresh the installation data
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update tier: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error("Error updating subscription tier:", error);
+      alert("Error updating subscription tier");
+    } finally {
+      setIsUpdatingTier(false);
     }
   };
 
@@ -741,6 +774,23 @@ export default function InstallationDetail({ params }) {
                   >
                     {installation?.status}
                   </span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Subscription Tier</dt>
+                <dd className="flex items-center">
+                  <select
+                    value={installation?.subscription_tier || 'basic'}
+                    onChange={(e) => updateSubscriptionTier(e.target.value)}
+                    disabled={isUpdatingTier}
+                    className="text-sm font-semibold rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="basic">Basic</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                  {isUpdatingTier && (
+                    <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                  )}
                 </dd>
               </div>
               <div>
